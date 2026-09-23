@@ -261,6 +261,20 @@ wss.on('connection', (ws) => {
   ws.on('close', () => onClose(ws, self));
 });
 
+server.on('error', (e: NodeJS.ErrnoException) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error('');
+    console.error(`  ポート ${PORT} はすでに使われています。`);
+    console.error('  前に起動したサーバーが動いていないか確認し、そのターミナルで Ctrl+C を押して止めてください。');
+    console.error(`  別のポートで起動するには：PORT=${PORT + 1} npm start`);
+    console.error('');
+    process.exit(1);
+  }
+  throw e;
+});
+// WebSocket 側にも同じエラーが届くので、ここでは何もしない（上で案内する）
+wss.on('error', () => {});
+
 server.listen(PORT, '0.0.0.0', () => {
   const addrs = lanAddresses();
   console.log('');
