@@ -145,11 +145,6 @@ button {
   gap: 6px;
 }
 
-/* 点数表は横画面のときだけ（それ以外は卓の中に点数を出す） */
-.players-panel {
-  display: none;
-}
-
 .c-honba,
 .c-label {
   display: none;
@@ -1354,34 +1349,51 @@ input.switch:checked::after {
   line-height: 1.6;
 }
 
-/* ───────────── 横画面：横長の卓と大きな表示（見やすさ優先） ─────────────
-   上下の河は中央に寄せ、左右の河は横の余白を使って離す。
-   高さを河に使えるので、河の牌を大きくできる */
+/* ───────────── 横画面：長方形の卓と大きな中央表示（見やすさ優先） ─────────────
+   卓は右の細い列（≡ と操作ボタン）を除いた幅いっぱいの長方形。
+   中央の枠に局・ドラと 4 人の点数（各席の方向）を大きく出し、その上下左右に河を並べる。
+   --cv：中央の枠の高さの半分、--cvw：幅の半分、--rt：河の牌の幅 */
 #app.land .game {
+  --side: clamp(110px, calc(var(--vw) * 0.17), 170px);
   --board: calc(var(--vh) - var(--hand-h) - 6px);
-  /* 左右の列（点数表・操作ボタン）の幅。小さな画面では縮める */
-  --side: clamp(120px, calc(var(--vw) * 0.2), 200px);
-  --bw: min(calc(var(--vw) - 2 * var(--side)), calc(var(--board) * 1.8));
-  grid-template-columns: minmax(var(--side), 1fr) var(--bw) minmax(var(--side), 1fr);
+  --bw: calc(var(--vw) - var(--side) - 8px);
+  grid-template-columns: var(--bw) var(--side);
+  grid-template-rows: auto 1fr var(--hand-h);
+  grid-template-areas:
+    'board top'
+    'board act'
+    'hand hand';
+  column-gap: 4px;
+}
+
+#app.land .board-wrap {
+  grid-row: 1 / 3;
+  align-items: center;
+  justify-content: center;
+  padding-left: 4px;
 }
 
 #app.land .board {
   width: var(--bw);
   height: var(--board);
-  /* 河の牌の幅：縦に「中央＋河 4 段」×2 と対面の手牌が収まる大きさ */
-  --rt: min(6.5cqh, 4.6cqw);
+  --cv: 17cqh;
+  /* 上下：中央の枠＋河 3 段と少しの余白が収まる大きさ。左右は幅に余裕がある */
+  --rt: min(calc((50cqh - var(--cv) - 1.2cqh) / 5.4), 4.2cqw);
+  --cvw: min(calc(50cqw - 5.8 * var(--rt)), calc(var(--cv) * 3.6));
+  /* 中央の文字の大きさの基準（大きな画面で文字が大きくなりすぎないよう上限をつける） */
+  --cf: min(var(--cv), 88px);
   border-radius: 1.5cqh;
 }
 
 #app.land .side.rel-0,
 #app.land .side.rel-2 {
-  --c: calc(1.4 * var(--rt));
+  --c: var(--cv);
 }
 
 /* 左右の席は、卓の高さ×幅の箱を 90 度回して置く */
 #app.land .side.rel-1,
 #app.land .side.rel-3 {
-  --c: calc(3.5 * var(--rt));
+  --c: var(--cvw);
   inset: auto;
   left: 50%;
   top: 50%;
@@ -1398,7 +1410,7 @@ input.switch:checked::after {
 }
 
 #app.land .river {
-  top: calc(50% + var(--c) + 0.35 * var(--rt));
+  top: calc(50% + var(--c) + 0.25 * var(--rt));
   min-height: calc(1.36 * var(--rt));
   border-radius: calc(0.15 * var(--rt));
 }
@@ -1415,7 +1427,7 @@ input.switch:checked::after {
 
 #app.land .stick {
   top: calc(50% + var(--c) + 0.02 * var(--rt));
-  height: calc(0.22 * var(--rt));
+  height: calc(0.2 * var(--rt));
   width: calc(3 * var(--rt));
 }
 
@@ -1432,29 +1444,62 @@ input.switch:checked::after {
   right: calc(1.3 * var(--rt));
 }
 
+/* 中央の枠：左に上家、右に下家、上に対面、下に自分、真ん中に局・ドラ */
 #app.land .center {
-  --w: calc(0.72 * var(--rt));
-  width: calc(6.6 * var(--rt));
-  height: calc(2.4 * var(--rt));
+  width: calc(2 * var(--cvw) - 0.4 * var(--rt));
+  height: calc(2 * var(--cv) - 0.3 * var(--rt));
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'left top right'
+    'left mid right'
+    'left bottom right';
+  align-items: center;
+  justify-items: center;
+  gap: 0 calc(0.15 * var(--cf));
+  padding: calc(0.06 * var(--cf)) calc(0.1 * var(--cf));
+  border-radius: calc(0.2 * var(--cf));
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.c-seat {
+  display: none;
+}
+
+.c-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5cqmin;
+}
+
+.c-sticks {
+  display: none;
+}
+
+/* 1 行目に局、2 行目にドラ・残り枚数（・供託） */
+#app.land .c-mid {
+  grid-area: mid;
   flex-direction: row;
   flex-wrap: wrap;
-  align-content: center;
-  column-gap: calc(0.3 * var(--rt));
-  row-gap: calc(0.08 * var(--rt));
-  border-radius: calc(0.25 * var(--rt));
+  justify-content: center;
+  align-items: center;
+  gap: calc(0.04 * var(--cf)) calc(0.12 * var(--cf));
 }
 
 #app.land .c-round {
   flex-basis: 100%;
   text-align: center;
-  font-size: calc(0.62 * var(--rt));
+  font-size: calc(0.36 * var(--cf));
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 #app.land .c-honba {
   display: inline;
-  font-size: 0.8em;
-  font-weight: 700;
+  font-size: 0.75em;
 }
 
 #app.land .c-sub,
@@ -1463,136 +1508,121 @@ input.switch:checked::after {
 }
 
 #app.land .c-dora {
+  --w: calc(0.32 * var(--cf));
   align-items: center;
-  gap: calc(0.06 * var(--rt));
+  gap: calc(0.04 * var(--cf));
 }
 
 #app.land .c-label,
-#app.land .c-rest {
+#app.land .c-rest,
+#app.land .c-sticks {
   display: inline;
-  font-size: calc(0.46 * var(--rt));
+  font-size: calc(0.25 * var(--cf));
   color: var(--ink);
+  white-space: nowrap;
 }
 
 #app.land .c-label {
-  margin-right: calc(0.1 * var(--rt));
+  margin-right: calc(0.06 * var(--cf));
 }
 
-/* 左の列：局と点数表 */
-#app.land .topbar {
-  gap: 10px;
-  padding: 8px 8px 8px 10px;
-  font-size: 16px;
-}
-
-#app.land .topbar .top-line {
-  flex-wrap: wrap;
-  row-gap: 4px;
-}
-
-#app.land .topbar .round {
-  font-size: 18px;
-  white-space: nowrap;
-}
-
-#app.land .topbar .chip {
-  white-space: nowrap;
-}
-
-#app.land .topbar .chip {
-  font-size: 14px;
-}
-
-#app.land .players-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  container-type: inline-size;
-}
-
-.pp-row {
-  display: grid;
-  grid-template-columns: 2.2em 1.3em minmax(0, 1fr);
-  overflow: hidden;
-  grid-template-areas:
-    'dir wind score'
-    'dir name name';
-  align-items: center;
-  column-gap: 6px;
-  padding: 4px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.22);
-  line-height: 1.2;
-}
-
-.pp-row.active {
-  border-color: var(--accent);
-  background: rgba(242, 178, 51, 0.2);
-}
-
-.pp-row.me .pp-name {
-  color: var(--accent);
-}
-
-.pp-dir {
-  grid-area: dir;
+#app.land .c-seat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 18px;
+  padding: calc(0.03 * var(--cf)) calc(0.12 * var(--cf));
+  border-radius: calc(0.12 * var(--cf));
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+#app.land .c-top {
+  grid-area: top;
+  flex-direction: row;
+  gap: calc(0.15 * var(--cf));
+}
+
+#app.land .c-bottom {
+  grid-area: bottom;
+  flex-direction: row;
+  gap: calc(0.15 * var(--cf));
+}
+
+#app.land .c-left {
+  grid-area: left;
+  justify-self: start;
+}
+
+#app.land .c-right {
+  grid-area: right;
+  justify-self: end;
+}
+
+#app.land .c-seat.active {
+  background: rgba(242, 178, 51, 0.28);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.cs-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25em;
+}
+
+.cs-wind {
+  font-size: calc(0.3 * var(--cf));
   font-weight: 800;
 }
 
-.pp-dir small {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--ink-dim);
-}
-
-.pp-wind {
-  grid-area: wind;
-  font-size: clamp(13px, 11cqi, 18px);
-  font-weight: 800;
-}
-
-.pp-wind.dealer {
+.cs-wind.dealer {
   color: var(--accent);
 }
 
-.pp-score {
-  grid-area: score;
-  /* 列が狭いときは小さくして、点数が切れないようにする */
-  font-size: clamp(14px, 13cqi, 22px);
-  white-space: nowrap;
+.cs-score {
+  font-size: calc(0.36 * var(--cf));
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
-.pp-name {
-  grid-area: name;
-  font-size: 13px;
+.cs-name {
+  font-size: calc(0.2 * var(--cf));
   color: var(--ink-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
 }
 
-.pp-riichi {
-  grid-area: name;
-  justify-self: end;
-  padding: 0 6px;
+.c-seat.me .cs-name {
+  color: var(--accent);
+}
+
+.cs-riichi {
+  padding: 0 0.4em;
   border-radius: 999px;
   background: var(--win);
   color: #fff;
-  font-size: 11px;
   font-weight: 700;
 }
 
-/* 右の列：操作ボタンを大きく */
+/* 右の列：≡ と操作ボタン */
+#app.land .topbar {
+  grid-area: top;
+  padding: 6px 4px 0;
+  gap: 6px;
+}
+
+#app.land .topbar .round,
+#app.land .topbar .chip {
+  display: none;
+}
+
+#app.land .actions {
+  padding: 6px 4px;
+}
+
 #app.land .actions .btn {
   min-height: 52px;
+  padding: 8px 10px;
   font-size: 20px;
 }
 
