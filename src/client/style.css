@@ -758,6 +758,10 @@ tr.me {
   font-size: 16px;
 }
 
+.card > .btn.ghost {
+  margin-top: 12px;
+}
+
 .card hr {
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
