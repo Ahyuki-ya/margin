@@ -6,7 +6,15 @@ import type { Action, DrawReason, Meld, RoundResult, Seat } from '../engine/type
 import type { PlayerView } from '../engine/view.ts';
 import { tileSvg } from './tiles.ts';
 import { helpHtml } from './help.ts';
-import { getOrientation, isTouchDevice, setOrientation, type Orientation } from './display.ts';
+import {
+  canRequestFullscreen,
+  enterFullscreen,
+  getOrientation,
+  installTipHtml,
+  isTouchDevice,
+  setOrientation,
+  type Orientation,
+} from './display.ts';
 
 import type { Prompt } from '../ai/prompt.ts';
 export type { Prompt };
@@ -297,9 +305,10 @@ export class TableUI {
         }
         <label class="menu-row"><span>自動和了<small>和了できるとき自動で和了る</small></span><input type="checkbox" class="switch" data-setting="autoWin" ${this.settings.autoWin ? 'checked' : ''}></label>
         <label class="menu-row"><span>鳴きなし<small>ポン・チー・カンの確認を出さない</small></span><input type="checkbox" class="switch" data-setting="noCall" ${this.settings.noCall ? 'checked' : ''}></label>
+        ${installTipHtml()}
         <div class="menu-buttons">
           <button class="btn ghost" data-cmd="help">遊び方</button>
-          ${canFullscreen() ? '<button class="btn ghost" data-cmd="fullscreen">全画面</button>' : ''}
+          ${canRequestFullscreen() ? '<button class="btn ghost" data-cmd="fullscreen">全画面</button>' : ''}
           <button class="btn ghost" data-cmd="exit">タイトルへ戻る</button>
           <button class="btn" data-cmd="menu-close">閉じる</button>
         </div>
@@ -684,19 +693,4 @@ export function resultHtml(v: PlayerView, res: RoundResult, names: string[], aka
       </div>`;
   }
   return body + deltasHtml(v, res.deltas, names);
-}
-
-function canFullscreen(): boolean {
-  return typeof document !== 'undefined' && !!document.fullscreenEnabled && !document.fullscreenElement;
-}
-
-/** 全画面にして、できれば横向きに固定する（Android の Chrome など） */
-async function enterFullscreen() {
-  try {
-    await document.documentElement.requestFullscreen();
-    const o = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-    await o.lock?.('landscape');
-  } catch {
-    // 対応していない端末では何もしない
-  }
 }

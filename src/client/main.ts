@@ -4,7 +4,15 @@ import { savedName, startLan } from './lan.ts';
 import { startLocalGame, type CpuLevel } from './local.ts';
 import { TIME_LABELS, type TimeKey } from '../ai/prompt.ts';
 import { helpHtml } from './help.ts';
-import { getOrientation, initDisplay, isTouchDevice, setOrientation, type Orientation } from './display.ts';
+import {
+  autoFullscreen,
+  getOrientation,
+  initDisplay,
+  installTipHtml,
+  isTouchDevice,
+  setOrientation,
+  type Orientation,
+} from './display.ts';
 
 const app = document.getElementById('app')!;
 
@@ -82,6 +90,7 @@ async function showTitle() {
           ${radio('orient', 'portrait', '縦向き', getOrientation() === 'portrait')}</div>`
             : ''
         }
+        ${installTipHtml()}
         <button class="btn big" id="start-cpu">CPU と対戦</button>
         <div id="lan-area"></div>
         <button class="btn ghost help-btn" id="show-help">遊び方・LAN 対戦のやり方</button>
@@ -117,6 +126,7 @@ async function showTitle() {
   app.querySelector('#start-cpu')!.addEventListener('click', () => {
     const p = read();
     savePrefs(p);
+    autoFullscreen();
     startLocalGame(app, {
       rules: { length: p.length, aka: p.aka },
       cpu: p.cpu,
@@ -144,6 +154,7 @@ async function showTitle() {
         input.classList.add('error');
         return;
       }
+      autoFullscreen();
       startLan(app, name, showTitle);
     });
   }

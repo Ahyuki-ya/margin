@@ -40,8 +40,10 @@ body {
   overscroll-behavior: none;
 }
 
+/* 画面端の余白（ノッチ・ブラウザのバーなど）は display.ts が測って --safe-* に入れる。
+   --vw, --vh はその内側の使える大きさ */
 #app {
-  min-height: var(--vh);
+  padding: var(--safe-t, 0px) var(--safe-r, 0px) var(--safe-b, 0px) var(--safe-l, 0px);
 }
 
 /* 画面を回転して表示しているとき（display.ts が位置・大きさ・回転を指定する） */
@@ -101,7 +103,7 @@ button {
   --act-h: 54px;
   /* 手牌の幅：画面の高さから決めた基準 × 設定の倍率。ただし 14 枚が横幅に収まる大きさまで */
   --ht: min(calc((var(--vw) - 16px) / 15.4), calc(min(60px, (var(--vh) - 94px) * 0.08) * var(--hand-scale, 1)));
-  --hand-h: calc(var(--ht) * 1.45 + 12px + env(safe-area-inset-bottom));
+  --hand-h: calc(var(--ht) * 1.45 + 12px);
   --board: min(calc(var(--vw) - 8px), calc(var(--vh) - var(--top-h) - var(--act-h) - var(--hand-h) - 8px));
   height: var(--vh);
   display: flex;
@@ -500,7 +502,7 @@ button {
   align-items: flex-end;
   justify-content: center;
   gap: calc(var(--ht) * 0.4);
-  padding: 0 4px calc(6px + env(safe-area-inset-bottom));
+  padding: 0 4px calc(6px);
 }
 
 .hand-row {
@@ -930,7 +932,7 @@ input[type='checkbox'] {
    画面の向きは #app のクラス（display.ts が付ける）で切り替える */
 #app.land .game {
     --ht: min(calc((var(--vw) - 24px) / 16.5), calc(min(var(--vh) * 0.105, 56px) * var(--hand-scale, 1)));
-    --hand-h: calc(var(--ht) * 1.42 + 4px + env(safe-area-inset-bottom));
+    --hand-h: calc(var(--ht) * 1.42 + 4px);
     --board: min(calc(var(--vh) - var(--hand-h) - 6px), calc(var(--vw) - 300px));
     display: grid;
     grid-template-columns: 1fr var(--board) 1fr;
@@ -939,7 +941,6 @@ input[type='checkbox'] {
       'top board act'
       'hand hand hand';
     align-items: stretch;
-    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
 
 #app.land .topbar {
@@ -977,7 +978,7 @@ input[type='checkbox'] {
 
 #app.land .myhand {
     grid-area: hand;
-    padding-bottom: calc(2px + env(safe-area-inset-bottom));
+    padding-bottom: calc(2px);
   }
 
 #app.land .modal-card {
@@ -1156,8 +1157,8 @@ input.switch:checked::after {
 
 .timer {
   position: fixed;
-  right: calc(12px + env(safe-area-inset-right));
-  bottom: calc(var(--hand-h) + 10px);
+  right: calc(12px + var(--safe-r, 0px));
+  bottom: calc(var(--hand-h) + 10px + var(--safe-b, 0px));
   z-index: 12;
   display: flex;
   align-items: baseline;
@@ -1305,4 +1306,15 @@ input.switch:checked::after {
 
 #app.land .title-screen .footer-note {
   margin-top: 6px;
+}
+
+/* iPhone の Safari 向け「ホーム画面に追加」の案内 */
+.install-tip {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(242, 178, 51, 0.5);
+  background: rgba(242, 178, 51, 0.12);
+  font-size: 12px;
+  line-height: 1.6;
 }

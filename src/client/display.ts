@@ -33,34 +33,99 @@ export function isTouchDevice(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 }
 
-/** 画面の向きに合わせて #app を回転し、幅・高さとレイアウトのクラスを付ける */
+/** 画面端の余白（ノッチ・ホームバーなど）を測る */
+function measureSafeArea(): { t: number; r: number; b: number; l: number } {
+  const el = document.createElement('div');
+  el.style.cssText =
+    'position:fixed;visibility:hidden;pointer-events:none;' +
+    'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+  document.body.appendChild(el);
+  const cs = getComputedStyle(el);
+  const r = {
+    t: parseFloat(cs.paddingTop) || 0,
+    r: parseFloat(cs.paddingRight) || 0,
+    b: parseFloat(cs.paddingBottom) || 0,
+    l: parseFloat(cs.paddingLeft) || 0,
+  };
+  el.remove();
+  return r;
+}
+
+/** 画面の向きに合わせて #app を回転し、使える幅・高さとレイアウトのクラスを付ける */
 export function applyDisplay() {
   const app = document.getElementById('app');
   if (!app) return;
   const want = current ?? (current = getOrientation());
-  const pw = window.innerWidth;
-  const ph = window.innerHeight;
+  // 実際に見えている範囲（ブラウザのバーを除く）
+  const vv = window.visualViewport;
+  const pw = Math.round(vv?.width ?? window.innerWidth);
+  const ph = Math.round(vv?.height ?? window.innerHeight);
   const physPortrait = ph > pw;
   const rotate = isTouchDevice() && (want === 'landscape') === physPortrait;
   const w = rotate ? ph : pw;
   const h = rotate ? pw : ph;
 
+  // 余白を、回転後の画面から見た上下左右に置き換える
+  const s = measureSafeArea();
+  let safe = s;
+  if (rotate && want === 'landscape') safe = { t: s.r, r: s.b, b: s.l, l: s.t }; // 時計回り
+  else if (rotate) safe = { t: s.l, r: s.t, b: s.r, l: s.b }; // 反時計回り
+  for (const [k, v] of Object.entries(safe)) app.style.setProperty(`--safe-${k}`, `${v}px`);
+
   app.classList.toggle('rotated', rotate);
   if (rotate) {
     app.style.width = `${w}px`;
     app.style.height = `${h}px`;
+    app.style.minHeight = '';
     // 横向きで表示：時計回りに 90 度（端末を左に倒して持つ）
     // 縦向きで表示：反時計回りに 90 度
     app.style.transform = want === 'landscape' ? `translateX(${pw}px) rotate(90deg)` : `translateY(${ph}px) rotate(-90deg)`;
   } else {
     app.style.width = '';
     app.style.height = '';
+    app.style.minHeight = `${h}px`;
     app.style.transform = '';
   }
-  app.style.setProperty('--vw', `${w}px`);
-  app.style.setProperty('--vh', `${h}px`);
-  app.classList.toggle('land', w > h && h <= 600);
-  app.classList.toggle('narrow', w <= 420);
+  const uw = w - safe.l - safe.r;
+  const uh = h - safe.t - safe.b;
+  app.style.setProperty('--vw', `${uw}px`);
+  app.style.setProperty('--vh', `${uh}px`);
+  app.classList.toggle('land', uw > uh && uh <= 600);
+  app.classList.toggle('narrow', uw <= 420);
+}
+
+/** ホーム画面から開いた（ブラウザのバーがない）状態か */
+export function isStandalone(): boolean {
+  const nav = navigator as Navigator & { standalone?: boolean };
+  return (
+    nav.standalone === true ||
+    matchMedia('(display-mode: standalone)').matches ||
+    matchMedia('(display-mode: fullscreen)').matches ||
+    !!document.fullscreenElement
+  );
+}
+
+export function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+/** ページから全画面にできるか（Android の Chrome など。iPhone の Safari は不可） */
+export function canRequestFullscreen(): boolean {
+  return !!document.fullscreenEnabled && !document.fullscreenElement;
+}
+
+/** 全画面にする（タップなどの操作の中で呼ぶ必要がある） */
+export async function enterFullscreen() {
+  try {
+    await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+  } catch {
+    // 対応していない端末では何もしない
+  }
+}
+
+/** スマホで対局を始めるときは、できれば自動で全画面にする */
+export function autoFullscreen() {
+  if (isTouchDevice() && canRequestFullscreen()) void enterFullscreen();
 }
 
 export function initDisplay() {
@@ -68,4 +133,11 @@ export function initDisplay() {
   window.addEventListener('resize', applyDisplay);
   window.addEventListener('orientationchange', applyDisplay);
   window.visualViewport?.addEventListener('resize', applyDisplay);
+  document.addEventListener('fullscreenchange', () => setTimeout(applyDisplay, 100));
+}
+
+/** iPhone の Safari で開いているときに出す「ホーム画面に追加」の案内（それ以外は空） */
+export function installTipHtml(): string {
+  if (!isIOS() || isStandalone()) return '';
+  return `<p class="install-tip">下の検索バーを消して全画面で遊ぶには、Safari の共有ボタン（□↑）→「ホーム画面に追加」を選び、ホーム画面のアイコンから開いてください。</p>`;
 }
