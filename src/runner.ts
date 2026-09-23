@@ -60,11 +60,12 @@ export class GameRunner {
           // 選択肢が 1 つしかなければ自動で選ぶ（リーチ後のツモ切りなど）
           let action: Action;
           if (legal.length === 1) {
-            if (opts.cpuDelay && !agent.kind.startsWith('human')) await sleep(opts.cpuDelay);
+            if (opts.cpuDelay) await sleep(opts.cpuDelay);
             action = legal[0];
           } else {
-            if (opts.cpuDelay && agent.kind.startsWith('cpu')) await sleep(opts.cpuDelay);
             action = await agent.decide(viewFor(game, seat), legal);
+            // CPU の見送りは待たずに進め、それ以外は人間が見て分かるよう少し待つ
+            if (opts.cpuDelay && agent.kind.startsWith('cpu') && action.type !== 'pass') await sleep(opts.cpuDelay);
           }
           if (this.stopped) return;
           this.log.entries.push({ s: seat, a: action });
