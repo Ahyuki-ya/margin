@@ -12,9 +12,13 @@ import {
   getOrientation,
   installTipHtml,
   isTouchDevice,
+  getTextSize,
   setInGame,
   setOrientation,
+  setTextSize,
+  TEXT_SIZES,
   type Orientation,
+  type TextSize,
 } from './display.ts';
 
 import type { Prompt } from '../ai/prompt.ts';
@@ -144,7 +148,7 @@ export class TableUI {
     this.handlers = handlers;
     root.innerHTML = `
       <div class="game">
-        <div class="topbar"></div>
+        <div class="topbar info"></div>
         <div class="board-wrap"><div class="board"><div class="board-content"></div><div class="ann-layer"></div></div></div>
         <div class="actions"></div>
         <div class="myhand"></div>
@@ -259,15 +263,20 @@ export class TableUI {
     return (seat - this.state!.view.seat + 4) % 4;
   }
 
+  /** 左上の情報欄：≡・局・本場・供託・ドラ表示・自分の名前 */
   private renderTop() {
-    const v = this.state!.view;
+    const { view: v, names } = this.state!;
+    const aka = v.rules.aka;
     const flags = [this.settings.autoWin ? '自動和了' : '', this.settings.noCall ? '鳴きなし' : ''].filter(Boolean);
+    const dora = v.doraIndicators.map((t) => `<div class="tile">${tileSvg(t, aka)}</div>`).join('');
     this.elTop.innerHTML = `
-      <div class="top-line">
+      <div class="i-line">
         <button class="btn-small" data-cmd="menu" title="設定" aria-label="設定メニュー">≡</button>
-        <span class="round">${roundLabel(v)} ${v.honba}本場</span>
-        <span class="chip">供託 ${v.riichiSticks}</span>
+        <span class="i-round">${roundLabel(v)}</span>
       </div>
+      <div class="i-sub">${v.honba}本場　供託 ${v.riichiSticks}</div>
+      <div class="i-dora"><span class="i-label">ドラ表示</span><div class="i-tiles">${dora}</div></div>
+      <div class="i-me">${escapeHtml(names[v.seat] ?? '')}</div>
       ${flags.length ? `<div class="top-flags">${flags.map((f) => `<span class="flag">${f}</span>`).join('')}</div>` : ''}`;
   }
 
@@ -298,6 +307,7 @@ export class TableUI {
               )}</div>`
             : ''
         }
+        <div class="menu-row"><span>文字の大きさ</span>${seg(TEXT_SIZES, getTextSize(), 'text')}</div>
         <div class="menu-row"><span>手牌の大きさ</span>${seg(HAND_SIZES, this.settings.handSize, 'size')}</div>
         ${
           speed
@@ -320,6 +330,10 @@ export class TableUI {
       </div>`;
   }
 
+  /**
+   * 卓：中央の台の四辺に、各席の風・点数（その人の向き）と河を並べる。
+   * 席ごとの要素（.side）を回転させて置くので、点数も河もその人の方を向く。
+   */
   private renderBoard() {
     const { view: v, names } = this.state!;
     const aka = v.rules.aka;
@@ -336,51 +350,31 @@ export class TableUI {
           return `<div class="${cls}">${tileSvg(d.tile, aka, d.riichi)}</div>`;
         })
         .join('');
+      // 他家は卓の端に名前・手牌の裏・鳴いた牌（自分の手牌と鳴いた牌は画面下）
       const edge =
         r === 0
           ? ''
           : `<div class="edge">
+              <span class="ename">${escapeHtml(names[seat] ?? '')}</span>
               <div class="backs">${'<div class="tile back"></div>'.repeat(p.handCount)}</div>
               <div class="melds">${p.melds.map((m) => this.meldHtml(m, seat, aka)).join('')}</div>
             </div>`;
       const isTurn = (v.phase === 'turn' && v.current === seat) || (pend && pend.from === seat);
       const wind = WIND_NAMES[p.seatWind - 27];
       html += `
-        <div class="side rel-${r} ${isTurn ? 'active' : ''}">
+        <div class="side rel-${r}">
           <div class="river">${river}</div>
           ${edge}
           ${p.riichi ? '<div class="stick"></div>' : ''}
-          <div class="seatinfo ${isTurn ? 'active' : ''} ${seat === v.dealer ? 'dealer' : ''}">
-            <div class="line1"><span class="wind">${wind}</span><span class="score">${p.score}</span></div>
-            <div class="pname">${escapeHtml(names[seat] ?? '')}</div>
+          <div class="seatinfo ${isTurn ? 'active' : ''} ${seat === v.dealer ? 'dealer' : ''} ${r === 0 ? 'me' : ''}">
+            <span class="wind">${wind}</span><span class="score">${p.score}</span>
           </div>
         </div>`;
     }
-    const dora = [0, 1, 2, 3, 4]
-      .map((i) => (i < v.doraIndicators.length ? `<div class="tile">${tileSvg(v.doraIndicators[i], aka)}</div>` : '<div class="tile back dora-back"></div>'))
-      .join('');
-    // 横画面では、中央の枠にそれぞれの席の方向へ点数を並べる（文字はすべて正立）
-    const posName = ['bottom', 'right', 'top', 'left'];
-    const seats = [0, 1, 2, 3]
-      .map((seat) => {
-        const p = v.players[seat];
-        const isTurn = (v.phase === 'turn' && v.current === seat) || (pend && pend.from === seat);
-        return `<div class="c-seat c-${posName[this.rel(seat)]} ${isTurn ? 'active' : ''} ${seat === v.seat ? 'me' : ''}">
-            <div class="cs-line"><span class="cs-wind ${seat === v.dealer ? 'dealer' : ''}">${WIND_NAMES[p.seatWind - 27]}</span><span class="cs-score">${p.score}</span></div>
-            <div class="cs-name">${escapeHtml(names[seat] ?? '')}${p.riichi ? '<span class="cs-riichi">リーチ</span>' : ''}</div>
-          </div>`;
-      })
-      .join('');
     html += `
       <div class="center">
-        <div class="c-mid">
-          <div class="c-round">${roundLabel(v)}<span class="c-honba"> ${v.honba}本場</span></div>
-          <div class="c-sub">${v.honba}本場　供託${v.riichiSticks}</div>
-          <div class="c-dora"><span class="c-label">ドラ</span>${dora}</div>
-          <div class="c-rest">残り ${v.liveRemaining}</div>
-          ${v.riichiSticks > 0 ? `<div class="c-sticks">供託 ${v.riichiSticks}</div>` : ''}
-        </div>
-        ${seats}
+        <div class="c-round">${roundLabel(v)}</div>
+        <div class="c-rest">残り ${v.liveRemaining}</div>
       </div>`;
     this.elBoard.innerHTML = html;
   }
@@ -546,7 +540,7 @@ export class TableUI {
   }
 
   private onClick(e: Event) {
-    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-discard],[data-cmd],[data-choose],[data-setting],[data-size],[data-speed],[data-orient]');
+    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-discard],[data-cmd],[data-choose],[data-setting],[data-size],[data-speed],[data-orient],[data-text]');
     if (!target || !this.state) return;
     const legal = this.state.prompt?.legal ?? [];
     if (target.dataset.setting) {
@@ -558,6 +552,11 @@ export class TableUI {
     }
     if (target.dataset.orient) {
       setOrientation(target.dataset.orient as Orientation);
+      this.renderMenu();
+      return;
+    }
+    if (target.dataset.text) {
+      setTextSize(target.dataset.text as TextSize);
       this.renderMenu();
       return;
     }

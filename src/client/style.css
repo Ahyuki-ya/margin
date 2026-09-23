@@ -104,74 +104,6 @@ button {
     0 calc(var(--w) * 0.09) calc(var(--w) * 0.12) rgba(0, 0, 0, 0.35);
 }
 
-/* ───────────── 対局画面 ───────────── */
-
-.game {
-  --top-h: 40px;
-  --act-h: 54px;
-  /* 手牌の幅：画面の高さから決めた基準 × 設定の倍率。ただし 14 枚が横幅に収まる大きさまで */
-  --ht: min(calc((var(--vw) - 16px) / 15.4), calc(min(60px, (var(--vh) - 94px) * 0.08) * var(--hand-scale, 1)));
-  --hand-h: calc(var(--ht) * 1.45 + 12px);
-  --board: min(calc(var(--vw) - 8px), calc(var(--vh) - var(--top-h) - var(--act-h) - var(--hand-h) - 8px));
-  height: var(--vh);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow: hidden;
-  background: radial-gradient(ellipse at center, #0e3526 0%, var(--bg) 70%);
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.topbar {
-  height: var(--top-h);
-  width: 100%;
-  max-width: 1100px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 8px;
-  font-size: 14px;
-}
-
-.topbar .top-line {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.top-flags {
-  display: flex;
-  gap: 6px;
-}
-
-.c-honba,
-.c-label {
-  display: none;
-}
-
-.topbar .round {
-  font-weight: 700;
-}
-
-.topbar .chip {
-  font-size: 12px;
-  color: var(--ink-dim);
-}
-
-.topbar .spacer {
-  flex: 1;
-}
-
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  white-space: nowrap;
-  color: var(--ink-dim);
-}
-
 .btn-small {
   width: 34px;
   height: 30px;
@@ -181,239 +113,6 @@ button {
   color: var(--ink);
   font-size: 16px;
   cursor: pointer;
-}
-
-.board-wrap {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.board {
-  --rt: 4.8cqmin; /* 河の牌の幅 */
-  position: relative;
-  width: var(--board);
-  height: var(--board);
-  container-type: size;
-  border-radius: 2cqmin;
-  background: radial-gradient(circle at center, var(--felt) 0%, var(--felt-dark) 100%);
-  box-shadow:
-    inset 0 0 6cqmin rgba(0, 0, 0, 0.45),
-    0 0 0 0.6cqmin #3b2a17;
-}
-
-.board-content,
-.ann-layer {
-  position: absolute;
-  inset: 0;
-}
-
-.ann-layer {
-  pointer-events: none;
-  z-index: 5;
-}
-
-.side {
-  /* 中央から河までの距離（横画面の横長の卓では上下と左右で変える） */
-  --c: calc(3 * var(--rt));
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.side.rel-1 {
-  transform: rotate(-90deg);
-}
-
-.side.rel-2 {
-  transform: rotate(180deg);
-}
-
-.side.rel-3 {
-  transform: rotate(90deg);
-}
-
-.river {
-  --w: var(--rt);
-  position: absolute;
-  left: calc(50% - 3 * var(--rt));
-  top: calc(50% + var(--c) + 1.8cqmin);
-  width: calc(6.45 * var(--rt));
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  align-items: flex-end;
-  column-gap: 0.1cqmin;
-}
-
-.river .tile {
-  margin-bottom: 0.45cqmin;
-}
-
-.river .tile.tsumogiri {
-  filter: brightness(0.93);
-}
-
-.river .tile.last {
-  outline: 0.45cqmin solid var(--accent);
-  outline-offset: 0.1cqmin;
-}
-
-.stick {
-  position: absolute;
-  left: 50%;
-  top: calc(50% + var(--c) + 0.35cqmin);
-  width: 12cqmin;
-  height: 1cqmin;
-  translate: -50% 0;
-  border-radius: 0.5cqmin;
-  background: #fff radial-gradient(circle, var(--minus) 0 0.4cqmin, transparent 0.45cqmin);
-  box-shadow: 0 0.1cqmin 0.3cqmin rgba(0, 0, 0, 0.5);
-}
-
-.edge {
-  --w: 3.3cqmin;
-  position: absolute;
-  left: 7%;
-  right: 7%;
-  bottom: 0.8cqmin;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 1cqmin;
-}
-
-.backs {
-  display: flex;
-  gap: 0.12cqmin;
-}
-
-.melds,
-.my-melds {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.8cqmin;
-}
-
-.meld {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.08cqmin;
-}
-
-.seatinfo {
-  position: absolute;
-  left: 50%;
-  top: calc(50% + var(--c) - 6.2cqmin);
-  translate: -50% 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.3cqmin 1.2cqmin;
-  border-radius: 1cqmin;
-  line-height: 1.15;
-  white-space: nowrap;
-  z-index: 2;
-}
-
-.seatinfo .line1 {
-  display: flex;
-  gap: 0.8cqmin;
-  font-size: 2.7cqmin;
-  font-variant-numeric: tabular-nums;
-}
-
-.seatinfo .wind {
-  font-weight: 800;
-}
-
-.seatinfo.dealer .wind {
-  color: var(--accent);
-}
-
-.seatinfo .pname {
-  font-size: 1.8cqmin;
-  color: var(--ink-dim);
-  max-width: 16cqmin;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 対面の名前と点数は逆さにならないようにする（左右は場所が狭いので横向きのまま） */
-.side.rel-2 .seatinfo {
-  rotate: 180deg;
-}
-
-.seatinfo.active {
-  background: rgba(242, 178, 51, 0.28);
-  box-shadow: 0 0 0 0.3cqmin var(--accent);
-}
-
-.center {
-  --w: 2.7cqmin;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  width: calc(6 * var(--rt));
-  height: calc(6 * var(--rt));
-  border-radius: 1.4cqmin;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5cqmin;
-}
-
-.c-round {
-  font-size: 3.2cqmin;
-  font-weight: 800;
-}
-
-.c-sub,
-.c-rest {
-  font-size: 1.9cqmin;
-  color: var(--ink-dim);
-}
-
-.c-dora {
-  display: flex;
-  gap: 0.2cqmin;
-}
-
-.ann {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  padding: 0.6cqmin 2.4cqmin;
-  border-radius: 2cqmin;
-  background: rgba(216, 65, 47, 0.92);
-  color: #fff;
-  font-size: 5.5cqmin;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0.2cqmin 0.6cqmin rgba(0, 0, 0, 0.4);
-  animation: pop 1.2s ease-out forwards;
-}
-
-.ann.rel-0 {
-  top: 76%;
-}
-
-.ann.rel-1 {
-  left: 78%;
-}
-
-.ann.rel-2 {
-  top: 24%;
-}
-
-.ann.rel-3 {
-  left: 22%;
 }
 
 @keyframes pop {
@@ -434,19 +133,6 @@ button {
   100% {
     opacity: 0;
   }
-}
-
-/* ───────────── 操作ボタン ───────────── */
-
-.actions {
-  height: var(--act-h);
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0 8px;
-  overflow-x: auto;
 }
 
 .btn {
@@ -519,24 +205,6 @@ button {
   font-size: 14px;
 }
 
-/* ───────────── 自分の手牌 ───────────── */
-
-.myhand {
-  height: var(--hand-h);
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: calc(var(--ht) * 0.4);
-  padding: 0 4px calc(6px);
-}
-
-.hand-row {
-  --w: var(--ht);
-  display: flex;
-  align-items: flex-end;
-}
-
 .hand-tile {
   cursor: default;
   transition: translate 0.08s ease;
@@ -561,14 +229,6 @@ button {
   outline: 2px solid var(--accent);
 }
 
-.hand-row .gap {
-  width: calc(var(--ht) * 0.35);
-}
-
-.my-melds {
-  --w: calc(var(--ht) * 0.72);
-}
-
 /* ───────────── 結果表示 ───────────── */
 
 .modal {
@@ -589,7 +249,7 @@ button {
 .modal-card {
   width: 100%;
   max-width: 560px;
-  max-height: calc(var(--vh) - 24px);
+  max-height: calc((var(--vh) - 24px) / var(--fs, 1));
   overflow: auto;
   padding: 16px 18px;
   border-radius: 14px;
@@ -934,16 +594,6 @@ input[type='checkbox'] {
   opacity: 1;
 }
 
-/* 狭い画面では設定の文字を小さく */
-#app.narrow .topbar {
-    gap: 6px;
-    font-size: 13px;
-  }
-
-#app.narrow .toggle {
-    font-size: 11px;
-  }
-
 #app.narrow .btn {
     padding: 8px 14px;
     font-size: 15px;
@@ -951,60 +601,6 @@ input[type='checkbox'] {
 
 #app.narrow .yaku {
     columns: 1;
-  }
-
-/* ───────────── スマホ横画面 ─────────────
-   卓を中央に置き、左に局の情報と設定、右に操作ボタン、下に手牌を並べる。
-   画面の向きは #app のクラス（display.ts が付ける）で切り替える */
-#app.land .game {
-    --ht: min(calc((var(--vw) - 24px) / 16.5), calc(min(var(--vh) * 0.105, 56px) * var(--hand-scale, 1)));
-    --hand-h: calc(var(--ht) * 1.42 + 4px);
-    --board: min(calc(var(--vh) - var(--hand-h) - 6px), calc(var(--vw) - 300px));
-    display: grid;
-    grid-template-columns: 1fr var(--board) 1fr;
-    grid-template-rows: 1fr var(--hand-h);
-    grid-template-areas:
-      'top board act'
-      'hand hand hand';
-    align-items: stretch;
-  }
-
-#app.land .topbar {
-    grid-area: top;
-    height: auto;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 8px;
-    padding: 8px 10px;
-  }
-
-#app.land .topbar .spacer {
-    display: none;
-  }
-
-#app.land .board-wrap {
-    grid-area: board;
-    align-items: flex-end;
-  }
-
-#app.land .actions {
-    grid-area: act;
-    height: auto;
-    flex-direction: column;
-    justify-content: center;
-    align-items: stretch;
-    padding: 8px 12px;
-    overflow: visible;
-  }
-
-#app.land .actions .btn {
-    width: 100%;
-  }
-
-#app.land .myhand {
-    grid-area: hand;
-    padding-bottom: calc(2px);
   }
 
 #app.land .modal-card {
@@ -1062,7 +658,7 @@ input[type='checkbox'] {
 
 .menu-panel {
   width: min(360px, 100%);
-  max-height: calc(var(--vh) - 52px);
+  max-height: calc((var(--vh) - 52px) / var(--fs, 1));
   overflow: auto;
   padding: 14px 16px;
   border-radius: 14px;
@@ -1179,24 +775,6 @@ input.switch:checked::after {
   font-size: 14px;
 }
 
-/* ───────────── 持ち時間 ───────────── */
-
-.timer {
-  position: fixed;
-  right: calc(12px + var(--safe-r, 0px));
-  bottom: calc(var(--hand-h) + 10px + var(--safe-b, 0px));
-  z-index: 12;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 4px 14px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
-
 .timer.hidden {
   display: none;
 }
@@ -1237,7 +815,7 @@ input.switch:checked::after {
 }
 
 #help-overlay .menu-panel {
-  max-height: calc(var(--vh) - 32px);
+  max-height: calc((var(--vh) - 32px) / var(--fs, 1));
 }
 
 .help {
@@ -1349,284 +927,442 @@ input.switch:checked::after {
   line-height: 1.6;
 }
 
-/* ───────────── 横画面：長方形の卓と大きな中央表示（見やすさ優先） ─────────────
-   卓は右の細い列（≡ と操作ボタン）を除いた幅いっぱいの長方形。
-   中央の枠に局・ドラと 4 人の点数（各席の方向）を大きく出し、その上下左右に河を並べる。
-   --cv：中央の枠の高さの半分、--cvw：幅の半分、--rt：河の牌の幅 */
-#app.land .game {
-  --side: clamp(110px, calc(var(--vw) * 0.17), 170px);
-  --board: calc(var(--vh) - var(--hand-h) - 6px);
-  --bw: calc(var(--vw) - var(--side) - 8px);
-  grid-template-columns: var(--bw) var(--side);
-  grid-template-rows: auto 1fr var(--hand-h);
-  grid-template-areas:
-    'board top'
-    'board act'
-    'hand hand';
-  column-gap: 4px;
+/* ───────────── 対局画面 ─────────────
+   卓は画面中央の正方形。中央の台の四辺に各席の風・点数と河を並べ、卓の端に他家の手牌。
+   左上（縦画面では上の帯）に局・ドラなどの情報、画面下に自分の手牌、その右上に操作ボタン。
+   --rt：河の牌の幅（卓の中のすべての大きさの基準）
+   --fs：文字の大きさの倍率（設定で変える） */
+
+.game {
+  --ht: min(calc((var(--vw) - 24px) / 16), calc(min(64px, var(--vh) * 0.12) * var(--hand-scale, 1)));
+  --hand-h: calc(var(--ht) * 1.4 + 8px);
+  --info-h: 0px;
+  /* 卓の一辺 = 19.6 × 河の牌の幅。下の約 1 牌分は手牌と重なってよい（自分の側は河だけなので） */
+  --rt: min(calc((var(--vh) - var(--hand-h) - var(--info-h) - 8px) / 18.6), calc((var(--vw) - 16px) / 19.6));
+  --S: calc(19.6 * var(--rt));
+  position: relative;
+  width: 100%;
+  height: var(--vh);
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #0e3526 0%, var(--bg) 75%);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-#app.land .board-wrap {
-  grid-row: 1 / 3;
-  align-items: center;
-  justify-content: center;
-  padding-left: 4px;
+/* 縦長の画面では、情報欄を卓の上の帯にする */
+#app:not(.land) .game {
+  --info-h: calc(46px * var(--fs, 1));
 }
 
-#app.land .board {
-  width: var(--bw);
-  height: var(--board);
-  --cv: 17cqh;
-  /* 上下：中央の枠＋河 3 段と少しの余白が収まる大きさ。左右は幅に余裕がある */
-  --rt: min(calc((50cqh - var(--cv) - 1.2cqh) / 5.4), 4.2cqw);
-  --cvw: min(calc(50cqw - 5.8 * var(--rt)), calc(var(--cv) * 3.6));
-  /* 中央の文字の大きさの基準（大きな画面で文字が大きくなりすぎないよう上限をつける） */
-  --cf: min(var(--cv), 88px);
-  border-radius: 1.5cqh;
-}
-
-#app.land .side.rel-0,
-#app.land .side.rel-2 {
-  --c: var(--cv);
-}
-
-/* 左右の席は、卓の高さ×幅の箱を 90 度回して置く */
-#app.land .side.rel-1,
-#app.land .side.rel-3 {
-  --c: var(--cvw);
-  inset: auto;
-  left: 50%;
-  top: 50%;
-  width: 100cqh;
-  height: 100cqw;
-}
-
-#app.land .side.rel-1 {
-  transform: translate(-50%, -50%) rotate(-90deg);
-}
-
-#app.land .side.rel-3 {
-  transform: translate(-50%, -50%) rotate(90deg);
-}
-
-#app.land .river {
-  top: calc(50% + var(--c) + 0.25 * var(--rt));
-  min-height: calc(1.36 * var(--rt));
-  border-radius: calc(0.15 * var(--rt));
-}
-
-#app.land .river .tile {
-  margin-bottom: calc(0.03 * var(--rt));
-}
-
-/* 手番の人の河を光らせる */
-#app.land .side.active .river {
-  box-shadow: 0 0 0 calc(0.08 * var(--rt)) var(--accent), 0 0 calc(0.5 * var(--rt)) rgba(242, 178, 51, 0.6);
-  background: rgba(242, 178, 51, 0.12);
-}
-
-#app.land .stick {
-  top: calc(50% + var(--c) + 0.02 * var(--rt));
-  height: calc(0.2 * var(--rt));
-  width: calc(3 * var(--rt));
-}
-
-#app.land .seatinfo {
-  display: none;
-}
-
-/* 他家の手牌の裏と鳴いた牌 */
-#app.land .edge {
-  --w: calc(0.75 * var(--rt));
-  bottom: calc(0.1 * var(--rt));
-  /* 角で隣の席の手牌と重ならないよう、隣の手牌の厚み分だけ内側に寄せる */
-  left: calc(1.3 * var(--rt));
-  right: calc(1.3 * var(--rt));
-}
-
-/* 中央の枠：左に上家、右に下家、上に対面、下に自分、真ん中に局・ドラ */
-#app.land .center {
-  width: calc(2 * var(--cvw) - 0.4 * var(--rt));
-  height: calc(2 * var(--cv) - 0.3 * var(--rt));
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    'left top right'
-    'left mid right'
-    'left bottom right';
-  align-items: center;
-  justify-items: center;
-  gap: 0 calc(0.15 * var(--cf));
-  padding: calc(0.06 * var(--cf)) calc(0.1 * var(--cf));
-  border-radius: calc(0.2 * var(--cf));
-  background: rgba(0, 0, 0, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.c-seat {
-  display: none;
-}
-
-.c-mid {
+/* ── 左上の情報欄 ── */
+.info {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 4;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.5cqmin;
+  align-items: flex-start;
+  gap: 6px;
+  zoom: var(--fs, 1);
 }
 
-.c-sticks {
-  display: none;
-}
-
-/* 1 行目に局、2 行目にドラ・残り枚数（・供託） */
-#app.land .c-mid {
-  grid-area: mid;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: calc(0.04 * var(--cf)) calc(0.12 * var(--cf));
-}
-
-#app.land .c-round {
-  flex-basis: 100%;
-  text-align: center;
-  font-size: calc(0.36 * var(--cf));
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-#app.land .c-honba {
-  display: inline;
-  font-size: 0.75em;
-}
-
-#app.land .c-sub,
-#app.land .dora-back {
-  display: none;
-}
-
-#app.land .c-dora {
-  --w: calc(0.32 * var(--cf));
-  align-items: center;
-  gap: calc(0.04 * var(--cf));
-}
-
-#app.land .c-label,
-#app.land .c-rest,
-#app.land .c-sticks {
-  display: inline;
-  font-size: calc(0.25 * var(--cf));
-  color: var(--ink);
-  white-space: nowrap;
-}
-
-#app.land .c-label {
-  margin-right: calc(0.06 * var(--cf));
-}
-
-#app.land .c-seat {
+.i-line {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: calc(0.03 * var(--cf)) calc(0.12 * var(--cf));
-  border-radius: calc(0.12 * var(--cf));
-  line-height: 1.1;
-  white-space: nowrap;
+  gap: 10px;
 }
 
-#app.land .c-top {
-  grid-area: top;
-  flex-direction: row;
-  gap: calc(0.15 * var(--cf));
-}
-
-#app.land .c-bottom {
-  grid-area: bottom;
-  flex-direction: row;
-  gap: calc(0.15 * var(--cf));
-}
-
-#app.land .c-left {
-  grid-area: left;
-  justify-self: start;
-}
-
-#app.land .c-right {
-  grid-area: right;
-  justify-self: end;
-}
-
-#app.land .c-seat.active {
-  background: rgba(242, 178, 51, 0.28);
-  box-shadow: 0 0 0 2px var(--accent);
-}
-
-.cs-line {
-  display: flex;
-  align-items: baseline;
-  gap: 0.25em;
-}
-
-.cs-wind {
-  font-size: calc(0.3 * var(--cf));
+.i-round {
+  font-size: 22px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
-.cs-wind.dealer {
+.i-sub {
+  font-size: 14px;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.i-dora {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.i-label {
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+.i-tiles {
+  --w: 30px;
+  display: flex;
+  gap: 3px;
+}
+
+.i-me {
+  font-size: 15px;
+  font-weight: 700;
   color: var(--accent);
 }
 
-.cs-score {
-  font-size: calc(0.36 * var(--cf));
+.top-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+#app:not(.land) .info {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--info-h) / var(--fs, 1));
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+}
+
+#app:not(.land) .i-dora {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+#app:not(.land) .i-tiles {
+  --w: 22px;
+}
+
+#app:not(.land) .i-me {
+  display: none;
+}
+
+/* ── 卓 ── */
+.board-wrap {
+  position: absolute;
+  left: 50%;
+  /* 上の帯（縦画面）と手牌のあいだの真ん中。横画面では上に 4px だけ空ける */
+  top: calc(var(--info-h) + max(4px, (var(--vh) - var(--info-h) - var(--hand-h) - var(--S)) / 2));
+  translate: -50% 0;
+}
+
+.board {
+  --c: calc(3.6 * var(--rt)); /* 中央の台の一辺の半分 */
+  /* 風・点数の帯の太さ（小さな画面でも読める最低の大きさを保つ） */
+  --lh: calc(max(1.1 * var(--rt), 18px) * var(--fs, 1));
+  /* 中央の台で、四辺の帯を除いた真ん中の幅 */
+  --mid: calc(2 * var(--c) - 2 * var(--lh) - 4px);
+  position: relative;
+  width: var(--S);
+  height: var(--S);
+  border-radius: calc(0.6 * var(--rt));
+  background: radial-gradient(circle at center, var(--felt) 0%, var(--felt-dark) 100%);
+  box-shadow:
+    inset 0 0 calc(2.5 * var(--rt)) rgba(0, 0, 0, 0.45),
+    0 0 0 calc(0.2 * var(--rt)) #3b2a17;
+}
+
+.board-content,
+.ann-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.ann-layer {
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* 席ごとの要素。卓の中心で回転させて、その人の方を向ける */
+.side {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.side.rel-1 {
+  transform: rotate(-90deg);
+}
+
+.side.rel-2 {
+  transform: rotate(180deg);
+}
+
+.side.rel-3 {
+  transform: rotate(90deg);
+}
+
+/* 河：中央の台の辺にぴったり接して、6 枚ずつ並べる */
+.river {
+  --w: var(--rt);
+  position: absolute;
+  left: calc(50% - 3.2 * var(--rt));
+  top: calc(50% + var(--c) + 0.35 * var(--rt));
+  width: calc(6.45 * var(--rt));
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-end;
+  column-gap: 1px;
+}
+
+.river .tile {
+  margin-bottom: calc(0.04 * var(--rt));
+}
+
+.river .tile.tsumogiri {
+  filter: brightness(0.93);
+}
+
+.river .tile.last {
+  outline: calc(0.1 * var(--rt)) solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* リーチ棒：中央の台と河のあいだ */
+.stick {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--c) + 0.08 * var(--rt));
+  translate: -50% 0;
+  width: calc(3 * var(--rt));
+  height: calc(0.2 * var(--rt));
+  border-radius: 999px;
+  background: #fff radial-gradient(circle, var(--minus) 0 calc(0.08 * var(--rt)), transparent calc(0.09 * var(--rt)));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* 風と点数：中央の台の、その人の側の辺の内側 */
+.seatinfo {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--c) - var(--lh) - 2px);
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: calc(0.2 * var(--rt));
+  height: var(--lh);
+  padding: 0 calc(0.3 * var(--rt));
+  border-radius: calc(0.25 * var(--rt));
+  line-height: 1;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.seatinfo .wind {
+  font-size: calc(max(0.62 * var(--rt), 12px) * var(--fs, 1));
+  font-weight: 800;
+}
+
+.seatinfo .score {
+  font-size: calc(max(0.72 * var(--rt), 14px) * var(--fs, 1));
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
-.cs-name {
-  font-size: calc(0.2 * var(--cf));
-  color: var(--ink-dim);
-  display: flex;
-  align-items: center;
-  gap: 0.3em;
+.seatinfo.me .score {
+  font-size: calc(max(0.86 * var(--rt), 16px) * var(--fs, 1));
 }
 
-.c-seat.me .cs-name {
+.seatinfo.dealer .wind {
   color: var(--accent);
 }
 
-.cs-riichi {
-  padding: 0 0.4em;
-  border-radius: 999px;
-  background: var(--win);
+/* 手番の人の辺を光らせる */
+.seatinfo.active {
+  background: rgba(242, 178, 51, 0.3);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 calc(0.4 * var(--rt)) rgba(242, 178, 51, 0.7);
+}
+
+/* 中央の台 */
+.center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: calc(2 * var(--c));
+  height: calc(2 * var(--c));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(0.1 * var(--rt));
+  border-radius: calc(0.4 * var(--rt));
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.c-round {
+  /* 真ん中の幅に「東1局」が収まる大きさまで */
+  font-size: min(calc(max(0.85 * var(--rt), 17px) * var(--fs, 1)), calc(var(--mid) / 3.3));
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.c-rest {
+  font-size: min(calc(max(0.5 * var(--rt), 11px) * var(--fs, 1)), calc(var(--mid) / 5));
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+/* 他家：卓の端の中央に、名前・手牌の裏・鳴いた牌 */
+.edge {
+  --w: calc(0.78 * var(--rt));
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(0.15 * var(--rt));
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: calc(0.4 * var(--rt));
+}
+
+.ename {
+  align-self: center;
+  max-width: calc(3.5 * var(--rt));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(max(0.5 * var(--rt), 11px) * var(--fs, 1));
+  color: var(--ink-dim);
+}
+
+.backs {
+  display: flex;
+  gap: 1px;
+}
+
+.melds,
+.my-melds {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(0.3 * var(--rt));
+}
+
+.meld {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+/* 「ポン」「リーチ」などの吹き出し */
+.ann {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  padding: calc(0.15 * var(--rt)) calc(0.6 * var(--rt));
+  border-radius: calc(0.5 * var(--rt));
+  background: rgba(216, 65, 47, 0.92);
   color: #fff;
-  font-weight: 700;
+  font-size: calc(1.1 * var(--rt) * var(--fs, 1));
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  animation: pop 1.2s ease-out forwards;
 }
 
-/* 右の列：≡ と操作ボタン */
-#app.land .topbar {
-  grid-area: top;
-  padding: 6px 4px 0;
-  gap: 6px;
+.ann.rel-0 {
+  top: calc(50% + 6.5 * var(--rt));
 }
 
-#app.land .topbar .round,
-#app.land .topbar .chip {
+.ann.rel-1 {
+  left: calc(50% + 6.5 * var(--rt));
+}
+
+.ann.rel-2 {
+  top: calc(50% - 6.5 * var(--rt));
+}
+
+.ann.rel-3 {
+  left: calc(50% - 6.5 * var(--rt));
+}
+
+/* ── 自分の手牌（画面下の中央） ── */
+.myhand {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  height: var(--hand-h);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(var(--ht) * 0.4);
+  padding: 0 4px 4px;
+  pointer-events: none;
+}
+
+.hand-row {
+  --w: var(--ht);
+  display: flex;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+
+.hand-row .gap {
+  width: calc(var(--ht) * 0.35);
+}
+
+.my-melds {
+  --w: calc(var(--ht) * 0.72);
+  pointer-events: auto;
+}
+
+/* ── 操作ボタン（手牌の右上） ── */
+.actions {
+  position: absolute;
+  right: 12px;
+  bottom: calc(var(--hand-h) + 10px);
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: calc(var(--vw) / var(--fs, 1) - 24px);
+  zoom: var(--fs, 1);
+}
+
+.actions .btn {
+  min-height: 50px;
+  padding: 8px 22px;
+  font-size: 19px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* ── 持ち時間（手牌の左上） ── */
+.timer {
+  position: absolute;
+  left: 12px;
+  bottom: calc(var(--hand-h) + 10px);
+  z-index: 6;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  zoom: var(--fs, 1);
+}
+
+/* 文字の大きさの設定は、結果画面・メニュー・タイトル画面にも効かせる */
+.modal-card,
+.menu-panel,
+.screen .card {
+  zoom: var(--fs, 1);
+}
+
+/* 鳴いた牌がないときは場所を取らない（手牌が卓と同じ中心になるように） */
+.my-melds:empty {
   display: none;
-}
-
-#app.land .actions {
-  padding: 6px 4px;
-}
-
-#app.land .actions .btn {
-  min-height: 52px;
-  padding: 8px 10px;
-  font-size: 20px;
-}
-
-#app.land .announce,
-#app.land .ann {
-  font-size: calc(1.1 * var(--rt));
 }

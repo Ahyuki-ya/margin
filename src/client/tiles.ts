@@ -117,13 +117,7 @@ function souzu(n: number, red: boolean): string {
   const B = red ? RED : BLUE;
   switch (n) {
     case 1:
-      // 1 索は鳥の代わりに大きな竹と飾り
-      return (
-        `<rect x="22" y="10" width="16" height="60" rx="7" fill="${G}"/>` +
-        `<line x1="22" y1="30" x2="38" y2="30" stroke="#fff" stroke-width="2"/>` +
-        `<line x1="22" y1="50" x2="38" y2="50" stroke="#fff" stroke-width="2"/>` +
-        `<circle cx="30" cy="40" r="6" fill="${R}"/>`
-      );
+      return bird(red);
     case 2:
       return stick(30, 22, G) + stick(30, 58, B);
     case 3:
@@ -156,6 +150,39 @@ function souzu(n: number, red: boolean): string {
         [14, 30, 46].map((x) => stick(x, 67, G, 18)).join('')
       );
   }
+}
+
+/** 一索の鳥（孔雀）。緑の体、青い翼と尾羽、赤いとさか */
+function bird(red: boolean): string {
+  const G = red ? RED : GREEN;
+  const B = red ? RED : BLUE;
+  const R = RED;
+  const feather = (cx: number, cy: number, deg: number, c: string) =>
+    `<g transform="rotate(${deg} ${cx} ${cy})">` +
+    `<ellipse cx="${cx}" cy="${cy}" rx="4.6" ry="13" fill="${c}"/>` +
+    `<circle cx="${cx}" cy="${cy - 7}" r="2.4" fill="#fff"/>` +
+    `<circle cx="${cx}" cy="${cy - 7}" r="1.4" fill="${R}"/>` +
+    `</g>`;
+  return (
+    // 尾羽（扇形）
+    feather(47, 30, 38, G) +
+    feather(42, 25, 18, B) +
+    feather(35, 23, -2, G) +
+    // 足
+    `<path d="M27 56 L25 69 M34 56 L35 69 M21 69 L29 69 M31 69 L39 69" stroke="${R}" stroke-width="2.2" stroke-linecap="round" fill="none"/>` +
+    // 体と翼
+    `<ellipse cx="30" cy="47" rx="14" ry="10.5" fill="${G}"/>` +
+    `<path d="M22 45 Q32 36 41 47 Q31 54 22 45 Z" fill="${B}"/>` +
+    // 首と頭
+    `<path d="M22 44 Q16 40 17 31" stroke="${G}" stroke-width="7" stroke-linecap="round" fill="none"/>` +
+    `<circle cx="17" cy="28" r="6.2" fill="${G}"/>` +
+    // とさか
+    `<path d="M15 22 L12 15 M17.5 21.5 L17.5 13.5 M20 22 L23 15.5" stroke="${R}" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<circle cx="12" cy="14.5" r="1.7" fill="${R}"/><circle cx="17.5" cy="13" r="1.7" fill="${R}"/><circle cx="23" cy="15" r="1.7" fill="${R}"/>` +
+    // 目とくちばし
+    `<circle cx="15.5" cy="27" r="1.9" fill="#fff"/><circle cx="15.2" cy="27" r="1" fill="#1a1a1a"/>` +
+    `<path d="M11.5 28.5 L5.5 31 L11.8 32 Z" fill="#d9822b"/>`
+  );
 }
 
 function honor(i: number): string {

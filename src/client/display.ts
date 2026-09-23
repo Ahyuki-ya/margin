@@ -136,7 +136,45 @@ export function autoFullscreen() {
   if (isTouchDevice() && canRequestFullscreen()) void enterFullscreen();
 }
 
+// ───────────── 文字の大きさ ─────────────
+
+export type TextSize = 'S' | 'M' | 'L' | 'XL';
+
+export const TEXT_SIZES: { key: TextSize; label: string; scale: number }[] = [
+  { key: 'S', label: '小', scale: 0.9 },
+  { key: 'M', label: '中', scale: 1 },
+  { key: 'L', label: '大', scale: 1.2 },
+  { key: 'XL', label: '特大', scale: 1.4 },
+];
+
+const TEXT_KEY = 'margin.textSize';
+
+export function getTextSize(): TextSize {
+  try {
+    const v = localStorage.getItem(TEXT_KEY);
+    return TEXT_SIZES.some((t) => t.key === v) ? (v as TextSize) : 'M';
+  } catch {
+    return 'M';
+  }
+}
+
+/** 文字の大きさの倍率を #app の --fs に入れる（画面のすべての文字がこれを使う） */
+export function applyTextSize() {
+  const scale = TEXT_SIZES.find((t) => t.key === getTextSize())?.scale ?? 1;
+  document.getElementById('app')?.style.setProperty('--fs', String(scale));
+}
+
+export function setTextSize(size: TextSize) {
+  try {
+    localStorage.setItem(TEXT_KEY, size);
+  } catch {
+    // 保存できない環境では、この画面を開いている間だけ有効
+  }
+  applyTextSize();
+}
+
 export function initDisplay() {
+  applyTextSize();
   applyDisplay();
   window.addEventListener('resize', applyDisplay);
   window.addEventListener('orientationchange', applyDisplay);

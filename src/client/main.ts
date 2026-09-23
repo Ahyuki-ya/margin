@@ -7,11 +7,15 @@ import { helpHtml } from './help.ts';
 import {
   autoFullscreen,
   getOrientation,
+  getTextSize,
   initDisplay,
   installTipHtml,
   isTouchDevice,
   setOrientation,
+  setTextSize,
+  TEXT_SIZES,
   type Orientation,
+  type TextSize,
 } from './display.ts';
 
 const app = document.getElementById('app')!;
@@ -80,6 +84,8 @@ async function showTitle() {
           ${radio('speed', 'slow', 'ゆっくり', prefs.speed === 'slow')}
           ${radio('speed', 'normal', 'ふつう', prefs.speed === 'normal')}
           ${radio('speed', 'fast', 'はやい', prefs.speed === 'fast')}</div>
+        <div class="form-row"><span>文字</span>
+          ${TEXT_SIZES.map((t) => radio('text', t.key, t.label, getTextSize() === t.key)).join('')}</div>
         <div class="form-row wide"><span>持ち時間</span>
           ${(Object.keys(TIME_LABELS) as TimeKey[]).map((k) => radio('time', k, TIME_LABELS[k], prefs.time === k)).join('')}</div>
         <p class="note small">持ち時間「15+30秒」は、1 手ごとに 15 秒（毎回元に戻る）と、対局全体で使い切る予備の 30 秒です。</p>
@@ -112,6 +118,9 @@ async function showTitle() {
     time: (app.querySelector('input[name="time"]:checked') as HTMLInputElement).value as TimeKey,
   });
 
+  app.querySelectorAll<HTMLInputElement>('input[name="text"]').forEach((el) =>
+    el.addEventListener('change', () => setTextSize(el.value as TextSize)),
+  );
   app.querySelectorAll<HTMLInputElement>('input[name="orient"]').forEach((el) =>
     el.addEventListener('change', () => setOrientation(el.value as Orientation)),
   );
