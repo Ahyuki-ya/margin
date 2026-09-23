@@ -4,6 +4,7 @@ import { savedName, startLan } from './lan.ts';
 import { startLocalGame, type CpuLevel } from './local.ts';
 import { TIME_LABELS, type TimeKey } from '../ai/prompt.ts';
 import { helpHtml } from './help.ts';
+import { getOrientation, initDisplay, isTouchDevice, setOrientation, type Orientation } from './display.ts';
 
 const app = document.getElementById('app')!;
 
@@ -74,6 +75,13 @@ async function showTitle() {
         <div class="form-row"><span>持ち時間</span>
           ${(Object.keys(TIME_LABELS) as TimeKey[]).map((k) => radio('time', k, TIME_LABELS[k], prefs.time === k)).join('')}</div>
         <p class="note small">持ち時間「15+30秒」は、1 手ごとに 15 秒（毎回元に戻る）と、対局全体で使い切る予備の 30 秒です。</p>
+        ${
+          isTouchDevice()
+            ? `<div class="form-row"><span>画面</span>
+          ${radio('orient', 'landscape', '横向き', getOrientation() === 'landscape')}
+          ${radio('orient', 'portrait', '縦向き', getOrientation() === 'portrait')}</div>`
+            : ''
+        }
         <button class="btn big" id="start-cpu">CPU と対戦</button>
         <div id="lan-area"></div>
         <button class="btn ghost help-btn" id="show-help">遊び方・LAN 対戦のやり方</button>
@@ -94,6 +102,10 @@ async function showTitle() {
     speed: (app.querySelector('input[name="speed"]:checked') as HTMLInputElement).value as Prefs['speed'],
     time: (app.querySelector('input[name="time"]:checked') as HTMLInputElement).value as TimeKey,
   });
+
+  app.querySelectorAll<HTMLInputElement>('input[name="orient"]').forEach((el) =>
+    el.addEventListener('change', () => setOrientation(el.value as Orientation)),
+  );
 
   const overlay = app.querySelector<HTMLElement>('#help-overlay')!;
   app.querySelector('#show-help')!.addEventListener('click', () => overlay.classList.remove('hidden'));
@@ -137,4 +149,5 @@ async function showTitle() {
   }
 }
 
+initDisplay();
 showTitle();

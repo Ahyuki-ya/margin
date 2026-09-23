@@ -94,7 +94,8 @@ export function startLan(root: HTMLElement, name: string, onExit: () => void) {
     if (!el) {
       el = document.createElement('div');
       el.className = 'status-toast';
-      document.body.appendChild(el);
+      // 画面を回転して表示しているときも一緒に回るよう #app の中に置く
+      (document.getElementById('app') ?? document.body).appendChild(el);
     }
     el.textContent = msg;
     el.classList.add('show');

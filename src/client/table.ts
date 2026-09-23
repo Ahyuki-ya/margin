@@ -6,6 +6,7 @@ import type { Action, DrawReason, Meld, RoundResult, Seat } from '../engine/type
 import type { PlayerView } from '../engine/view.ts';
 import { tileSvg } from './tiles.ts';
 import { helpHtml } from './help.ts';
+import { getOrientation, isTouchDevice, setOrientation, type Orientation } from './display.ts';
 
 import type { Prompt } from '../ai/prompt.ts';
 export type { Prompt };
@@ -141,11 +142,6 @@ export class TableUI {
         <div class="modal hidden"></div>
         <div class="menu hidden" data-cmd="menu-close"></div>
         <div class="timer hidden" aria-live="off"></div>
-        <div class="rotate-hint">
-          <svg class="rotate-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="4" width="20" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="24" cy="38" r="2" fill="currentColor"/></svg>
-          <p>スマホを横向きにすると<br>遊びやすくなります</p>
-          <button class="btn ghost" data-cmd="hide-hint">このまま続ける</button>
-        </div>
       </div>`;
     this.elTop = root.querySelector('.topbar')!;
     this.elBoard = root.querySelector('.board-content')!;
@@ -277,6 +273,18 @@ export class TableUI {
     this.elMenu.innerHTML = `
       <div class="menu-panel" role="dialog" aria-label="設定">
         <h3>設定</h3>
+        ${
+          isTouchDevice()
+            ? `<div class="menu-row"><span>画面の向き<small>端末の回転ロック中でも横向きで遊べます</small></span>${seg(
+                [
+                  { key: 'landscape', label: '横' },
+                  { key: 'portrait', label: '縦' },
+                ],
+                getOrientation(),
+                'orient',
+              )}</div>`
+            : ''
+        }
         <div class="menu-row"><span>手牌の大きさ</span>${seg(HAND_SIZES, this.settings.handSize, 'size')}</div>
         ${
           speed
@@ -508,7 +516,7 @@ export class TableUI {
   }
 
   private onClick(e: Event) {
-    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-discard],[data-cmd],[data-choose],[data-setting],[data-size],[data-speed]');
+    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-discard],[data-cmd],[data-choose],[data-setting],[data-size],[data-speed],[data-orient]');
     if (!target || !this.state) return;
     const legal = this.state.prompt?.legal ?? [];
     if (target.dataset.setting) {
@@ -516,6 +524,11 @@ export class TableUI {
       this.settings[key] = (target as HTMLInputElement).checked;
       saveSettings(this.settings);
       this.render(this.state);
+      return;
+    }
+    if (target.dataset.orient) {
+      setOrientation(target.dataset.orient as Orientation);
+      this.renderMenu();
       return;
     }
     if (target.dataset.size) {
@@ -592,9 +605,6 @@ export class TableUI {
         // パネルの中をクリックしたときは閉じない（背景と「閉じる」だけ）
         if (target === this.elMenu && e.target !== this.elMenu) break;
         this.elMenu.classList.add('hidden');
-        break;
-      case 'hide-hint':
-        this.root.querySelector('.rotate-hint')?.classList.add('dismissed');
         break;
       case 'fullscreen':
         void enterFullscreen();

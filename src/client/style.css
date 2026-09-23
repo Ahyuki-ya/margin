@@ -19,6 +19,9 @@
   --me-row: #fff1c7;
   /* 牌の幅。置き場所ごとに上書きする */
   --w: 24px;
+  /* 表示したい向きでの画面の幅・高さ（画面を回転して表示するときは入れ替わる） */
+  --vw: 100vw;
+  --vh: 100dvh;
   color-scheme: dark;
 }
 
@@ -38,7 +41,17 @@ body {
 }
 
 #app {
-  min-height: 100dvh;
+  min-height: var(--vh);
+}
+
+/* 画面を回転して表示しているとき（display.ts が位置・大きさ・回転を指定する） */
+#app.rotated {
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-height: 0;
+  overflow: auto;
+  transform-origin: top left;
 }
 
 button {
@@ -87,10 +100,10 @@ button {
   --top-h: 40px;
   --act-h: 54px;
   /* 手牌の幅：画面の高さから決めた基準 × 設定の倍率。ただし 14 枚が横幅に収まる大きさまで */
-  --ht: min(calc((100vw - 16px) / 15.4), calc(min(60px, (100dvh - 94px) * 0.08) * var(--hand-scale, 1)));
+  --ht: min(calc((var(--vw) - 16px) / 15.4), calc(min(60px, (var(--vh) - 94px) * 0.08) * var(--hand-scale, 1)));
   --hand-h: calc(var(--ht) * 1.45 + 12px + env(safe-area-inset-bottom));
-  --board: min(calc(100vw - 8px), calc(100dvh - var(--top-h) - var(--act-h) - var(--hand-h) - 8px));
-  height: 100dvh;
+  --board: min(calc(var(--vw) - 8px), calc(var(--vh) - var(--top-h) - var(--act-h) - var(--hand-h) - 8px));
+  height: var(--vh);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -548,7 +561,7 @@ button {
 .modal-card {
   width: 100%;
   max-width: 560px;
-  max-height: calc(100dvh - 24px);
+  max-height: calc(var(--vh) - 24px);
   overflow: auto;
   padding: 16px 18px;
   border-radius: 14px;
@@ -736,7 +749,7 @@ tr.me {
 /* ───────────── タイトル・ロビー ───────────── */
 
 .screen {
-  min-height: 100dvh;
+  min-height: var(--vh);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -879,7 +892,7 @@ input[type='checkbox'] {
   bottom: 24px;
   translate: -50% 0;
   z-index: 20;
-  max-width: calc(100vw - 32px);
+  max-width: calc(var(--vw) - 32px);
   padding: 10px 16px;
   border-radius: 8px;
   background: #222;
@@ -894,33 +907,31 @@ input[type='checkbox'] {
 }
 
 /* 狭い画面では設定の文字を小さく */
-@media (max-width: 420px) {
-  .topbar {
+#app.narrow .topbar {
     gap: 6px;
     font-size: 13px;
   }
 
-  .toggle {
+#app.narrow .toggle {
     font-size: 11px;
   }
 
-  .btn {
+#app.narrow .btn {
     padding: 8px 14px;
     font-size: 15px;
   }
 
-  .yaku {
+#app.narrow .yaku {
     columns: 1;
   }
-}
 
 /* ───────────── スマホ横画面 ─────────────
-   卓を中央に置き、左に局の情報と設定、右に操作ボタン、下に手牌を並べる */
-@media (orientation: landscape) and (max-height: 600px) {
-  .game {
-    --ht: min(calc((100vw - 24px) / 16.5), calc(min(100dvh * 0.105, 56px) * var(--hand-scale, 1)));
+   卓を中央に置き、左に局の情報と設定、右に操作ボタン、下に手牌を並べる。
+   画面の向きは #app のクラス（display.ts が付ける）で切り替える */
+#app.land .game {
+    --ht: min(calc((var(--vw) - 24px) / 16.5), calc(min(var(--vh) * 0.105, 56px) * var(--hand-scale, 1)));
     --hand-h: calc(var(--ht) * 1.42 + 4px + env(safe-area-inset-bottom));
-    --board: min(calc(100dvh - var(--hand-h) - 6px), calc(100vw - 300px));
+    --board: min(calc(var(--vh) - var(--hand-h) - 6px), calc(var(--vw) - 300px));
     display: grid;
     grid-template-columns: 1fr var(--board) 1fr;
     grid-template-rows: 1fr var(--hand-h);
@@ -931,7 +942,7 @@ input[type='checkbox'] {
     padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
 
-  .topbar {
+#app.land .topbar {
     grid-area: top;
     height: auto;
     flex-direction: column;
@@ -941,16 +952,16 @@ input[type='checkbox'] {
     padding: 8px 10px;
   }
 
-  .topbar .spacer {
+#app.land .topbar .spacer {
     display: none;
   }
 
-  .board-wrap {
+#app.land .board-wrap {
     grid-area: board;
     align-items: flex-end;
   }
 
-  .actions {
+#app.land .actions {
     grid-area: act;
     height: auto;
     flex-direction: column;
@@ -960,92 +971,41 @@ input[type='checkbox'] {
     overflow: visible;
   }
 
-  .actions .btn {
+#app.land .actions .btn {
     width: 100%;
   }
 
-  .myhand {
+#app.land .myhand {
     grid-area: hand;
     padding-bottom: calc(2px + env(safe-area-inset-bottom));
   }
 
-  .modal-card {
+#app.land .modal-card {
     max-width: 720px;
     padding: 12px 16px;
   }
 
-  .modal-card h2 {
+#app.land .modal-card h2 {
     margin: 2px 0 6px;
     font-size: 18px;
   }
 
-  .yaku {
+#app.land .yaku {
     columns: 3;
     margin: 6px 0;
   }
 
-  .deltas td {
+#app.land .deltas td {
     padding: 3px 6px;
   }
 
-  .screen {
+#app.land .screen {
     justify-content: flex-start;
   }
 
-  .card {
+#app.land .card {
     max-width: 640px;
   }
-}
-
-/* 縦向きのスマホでは横向きをすすめる */
-.rotate-hint {
-  display: none;
-}
-
-@media (orientation: portrait) and (pointer: coarse) {
-  .rotate-hint:not(.dismissed) {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    padding: 24px;
-    background: rgba(5, 25, 18, 0.94);
-    text-align: center;
-  }
-}
-
-.rotate-hint .rotate-icon {
-  width: 72px;
-  height: 72px;
-  animation: tilt 2.4s ease-in-out infinite;
-}
-
-@keyframes tilt {
-  0%,
-  30% {
-    rotate: 0deg;
-  }
-  60%,
-  100% {
-    rotate: -90deg;
-  }
-}
-
-.rotate-hint p {
-  margin: 0;
-  font-size: 17px;
-  line-height: 1.6;
-}
-
-.btn-small.wide {
-  width: auto;
-  padding: 0 10px;
-  font-size: 13px;
-}
 
 /* ───────────── 設定メニュー ───────────── */
 
@@ -1075,7 +1035,7 @@ input[type='checkbox'] {
 
 .menu-panel {
   width: min(360px, 100%);
-  max-height: calc(100dvh - 52px);
+  max-height: calc(var(--vh) - 52px);
   overflow: auto;
   padding: 14px 16px;
   border-radius: 14px;
@@ -1250,7 +1210,7 @@ input.switch:checked::after {
 }
 
 #help-overlay .menu-panel {
-  max-height: calc(100dvh - 32px);
+  max-height: calc(var(--vh) - 32px);
 }
 
 .help {
@@ -1309,4 +1269,40 @@ input.switch:checked::after {
 .help-btn {
   width: 100%;
   margin-top: 12px;
+}
+
+/* 横向きで高さが足りないときは、タイトル画面の設定を 2 列に並べる */
+#app.land .title-screen {
+  justify-content: center;
+  padding: 8px 12px;
+}
+
+#app.land .title-screen .card {
+  max-width: 820px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 24px;
+  padding: 12px 18px;
+}
+
+#app.land .title-screen .card > * {
+  grid-column: 1 / -1;
+}
+
+#app.land .title-screen .card > .form-row {
+  grid-column: auto;
+  margin: 6px 0;
+}
+
+#app.land .title-screen .logo {
+  font-size: 30px;
+}
+
+#app.land .title-screen .btn.big {
+  margin-top: 8px;
+  padding: 10px;
+}
+
+#app.land .title-screen .footer-note {
+  margin-top: 6px;
 }
