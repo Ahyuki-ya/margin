@@ -38,6 +38,14 @@ body {
   font-family: system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  /* 牌を 2 回タップしたときに iPhone がページを拡大しないようにする */
+  touch-action: manipulation;
+}
+
+button,
+input,
+label {
+  touch-action: manipulation;
 }
 
 /* 画面端の余白（ノッチ・ブラウザのバーなど）は display.ts が測って --safe-* に入れる。
@@ -1500,11 +1508,13 @@ input.switch:checked::after {
   flex-direction: column;
   gap: 4px;
   width: 100%;
+  container-type: inline-size;
 }
 
 .pp-row {
   display: grid;
-  grid-template-columns: 2.4em 1.3em 1fr;
+  grid-template-columns: 2.2em 1.3em minmax(0, 1fr);
+  overflow: hidden;
   grid-template-areas:
     'dir wind score'
     'dir name name';
@@ -1543,7 +1553,7 @@ input.switch:checked::after {
 
 .pp-wind {
   grid-area: wind;
-  font-size: 18px;
+  font-size: clamp(13px, 11cqi, 18px);
   font-weight: 800;
 }
 
@@ -1553,7 +1563,9 @@ input.switch:checked::after {
 
 .pp-score {
   grid-area: score;
-  font-size: 22px;
+  /* 列が狭いときは小さくして、点数が切れないようにする */
+  font-size: clamp(14px, 13cqi, 22px);
+  white-space: nowrap;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }

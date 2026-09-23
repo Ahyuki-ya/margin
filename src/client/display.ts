@@ -64,10 +64,9 @@ export function applyDisplay() {
   const app = document.getElementById('app');
   if (!app) return;
   const want = current ?? (current = getOrientation());
-  // 実際に見えている範囲（ブラウザのバーを除く）
-  const vv = window.visualViewport;
-  const pw = Math.round(vv?.width ?? window.innerWidth);
-  const ph = Math.round(vv?.height ?? window.innerHeight);
+  // ページの幅・高さ（ブラウザのバーを除く）。visualViewport は拡大するとも小さくなるので使わない
+  const pw = document.documentElement.clientWidth || window.innerWidth;
+  const ph = document.documentElement.clientHeight || window.innerHeight;
   const physPortrait = ph > pw;
   const rotate = inGame && isTouchDevice() && (want === 'landscape') === physPortrait;
   const w = rotate ? ph : pw;
@@ -141,7 +140,6 @@ export function initDisplay() {
   applyDisplay();
   window.addEventListener('resize', applyDisplay);
   window.addEventListener('orientationchange', applyDisplay);
-  window.visualViewport?.addEventListener('resize', applyDisplay);
   document.addEventListener('fullscreenchange', () => setTimeout(applyDisplay, 100));
 }
 
