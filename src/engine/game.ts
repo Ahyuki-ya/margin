@@ -10,7 +10,7 @@
 // 画面に何も依存しないので、ブラウザでも Node（LAN サーバー・自己対戦）でも同じように動く。
 // 乱数は種から決まるので、seed と apply した行動の列（牌譜）があれば対局を完全に再現できる。
 
-import { countYaochuKinds, isAgari, isTenpai, toCounts, waitingKinds, type Counts } from './hand.ts';
+import { countYaochuKinds, isAgari, isTenpai, shanten, toCounts, waitingKinds, type Counts } from './hand.ts';
 import { Rng } from './rng.ts';
 import { withDefaults, type Rules } from './rules.ts';
 import { evaluateWin, payments, type WinContext } from './score.ts';
@@ -310,7 +310,13 @@ export class Game {
       out.push({ type: 'discard', tile: t });
     }
     if (canRiichi) {
+      const counts = toCounts(p.hand);
       for (const t of p.hand) {
+        // 向聴数で先にふるい分けてから、5 枚目待ちなどを含めて聴牌を確かめる
+        counts[kindOf(t)]--;
+        const sh = shanten(counts, p.melds.length);
+        counts[kindOf(t)]++;
+        if (sh !== 0) continue;
         const rest = removeOne(p.hand, t);
         if (isTenpai(toCounts(rest), p.melds.length > 0, this.usedCounts(rest, p.melds))) {
           out.push({ type: 'discard', tile: t, riichi: true });
@@ -534,11 +540,24 @@ export class Game {
     return rest.some((t) => !forbidden.includes(kindOf(t)));
   }
 
+  /**
+   * 手牌の待ち。他家の打牌ごとに調べるので、手牌が変わるまで覚えておく
+   * （手牌は変更のたびに別の配列に置き換わる。ツモは push なので枚数でも確かめる）
+   */
+  private waitsCache = new WeakMap<Tile[], { len: number; waits: Kind[] }>();
+
+  private waitsOf(p: PlayerState): Kind[] {
+    const hit = this.waitsCache.get(p.hand);
+    if (hit && hit.len === p.hand.length) return hit.waits;
+    const waits = waitingKinds(toCounts(p.hand), p.melds.length > 0);
+    this.waitsCache.set(p.hand, { len: p.hand.length, waits });
+    return waits;
+  }
+
   /** フリテンでないか（形・役は別に判定） */
   private canRon(seat: Seat, tile: Tile): boolean {
     const p = this.players[seat];
-    const c = toCounts(p.hand);
-    const waits = waitingKinds(c, p.melds.length > 0);
+    const waits = this.waitsOf(p);
     if (!waits.includes(kindOf(tile))) return false;
     if (p.tempFuriten || p.riichiFuriten) return false;
     if (p.discards.some((d) => waits.includes(kindOf(d.tile)))) return false;

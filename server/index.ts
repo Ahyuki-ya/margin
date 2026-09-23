@@ -12,9 +12,8 @@ import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { Agent } from '../src/ai/agent.ts';
-import { GreedyAgent } from '../src/ai/greedy.ts';
+import { makeCpu, parseCpuLevel, type CpuLevel } from '../src/ai/index.ts';
 import { PromptAgent } from '../src/ai/prompt.ts';
-import { RandomAgent } from '../src/ai/random.ts';
 import { randomSeed } from '../src/engine/rng.ts';
 import type { Rules } from '../src/engine/rules.ts';
 import type { Action, Seat } from '../src/engine/types.ts';
@@ -116,7 +115,7 @@ function broadcastState() {
   for (const m of members) sendState(m);
 }
 
-function startGame(rules: Partial<Rules>, cpu: 'random' | 'greedy') {
+function startGame(rules: Partial<Rules>, cpu: CpuLevel) {
   const humans = members.slice(0, MAX_HUMANS);
   // 席はランダム
   const seats = ([0, 1, 2, 3] as Seat[]).sort(() => Math.random() - 0.5);
@@ -138,7 +137,7 @@ function startGame(rules: Partial<Rules>, cpu: 'random' | 'greedy') {
       agents.push(m.agent!);
       names.push(m.name);
     } else {
-      agents.push(cpu === 'greedy' ? new GreedyAgent() : new RandomAgent());
+      agents.push(makeCpu(cpu));
       names.push(`CPU ${++cpuNo}`);
     }
   }
@@ -218,7 +217,7 @@ function onMessage(ws: WebSocket, raw: string, self: { member?: Member }) {
       // 受け取るのは選べる設定だけ
       startGame(
         { length: msg.rules?.length === 'tonpuu' ? 'tonpuu' : 'hanchan', aka: msg.rules?.aka !== false },
-        msg.cpu === 'greedy' ? 'greedy' : 'random',
+        parseCpuLevel(msg.cpu),
       );
       break;
     case 'action':

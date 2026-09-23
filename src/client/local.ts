@@ -1,8 +1,7 @@
 // ブラウザだけで完結する CPU 対戦
 
 import type { Agent } from '../ai/agent.ts';
-import { GreedyAgent } from '../ai/greedy.ts';
-import { RandomAgent } from '../ai/random.ts';
+import { makeCpu, type CpuLevel } from '../ai/index.ts';
 import type { Game } from '../engine/game.ts';
 import type { GameLog } from '../engine/log.ts';
 import { randomSeed } from '../engine/rng.ts';
@@ -14,8 +13,7 @@ import { announceText } from './announce.ts';
 import { TableUI } from './table.ts';
 import { PromptAgent } from '../ai/prompt.ts';
 
-export type { CpuLevel } from '../net/protocol.ts';
-import type { CpuLevel } from '../net/protocol.ts';
+export type { CpuLevel };
 
 export interface LocalOptions {
   rules: Partial<Rules>;
@@ -27,8 +25,7 @@ export interface LocalOptions {
 export function startLocalGame(root: HTMLElement, opts: LocalOptions) {
   const human = new PromptAgent();
   const humanSeat = Math.floor(Math.random() * 4) as Seat;
-  const makeCpu = () => (opts.cpu === 'greedy' ? new GreedyAgent() : new RandomAgent());
-  const agents: Agent[] = [0, 1, 2, 3].map((s) => (s === humanSeat ? human : makeCpu()));
+  const agents: Agent[] = [0, 1, 2, 3].map((s) => (s === humanSeat ? human : makeCpu(opts.cpu)));
   let n = 0;
   const names = agents.map((a) => (a === human ? 'あなた' : `CPU ${++n}`));
 

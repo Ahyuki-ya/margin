@@ -110,6 +110,11 @@ export class TableUI {
         <div class="actions"></div>
         <div class="myhand"></div>
         <div class="modal hidden"></div>
+        <div class="rotate-hint">
+          <svg class="rotate-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="4" width="20" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="24" cy="38" r="2" fill="currentColor"/></svg>
+          <p>スマホを横向きにすると<br>遊びやすくなります</p>
+          <button class="btn ghost" data-cmd="hide-hint">このまま続ける</button>
+        </div>
       </div>`;
     this.elTop = root.querySelector('.topbar')!;
     this.elBoard = root.querySelector('.board-content')!;
@@ -166,6 +171,7 @@ export class TableUI {
       <span class="round">${roundLabel(v)} ${v.honba}本場</span>
       <span class="chip">供託 ${v.riichiSticks}</span>
       <span class="spacer"></span>
+      ${canFullscreen() ? '<button class="btn-small wide" data-cmd="fullscreen">全画面</button>' : ''}
       <label class="toggle"><input type="checkbox" data-setting="autoWin" ${this.settings.autoWin ? 'checked' : ''}>自動和了</label>
       <label class="toggle"><input type="checkbox" data-setting="noCall" ${this.settings.noCall ? 'checked' : ''}>鳴きなし</label>`;
   }
@@ -431,6 +437,12 @@ export class TableUI {
           this.renderModal();
         }
         break;
+      case 'hide-hint':
+        this.root.querySelector('.rotate-hint')?.classList.add('dismissed');
+        break;
+      case 'fullscreen':
+        void enterFullscreen();
+        break;
       case 'savelog':
         this.handlers.onSaveLog?.();
         break;
@@ -506,4 +518,19 @@ export function resultHtml(v: PlayerView, res: RoundResult, names: string[], aka
       </div>`;
   }
   return body + deltasHtml(v, res.deltas, names);
+}
+
+function canFullscreen(): boolean {
+  return typeof document !== 'undefined' && !!document.fullscreenEnabled && !document.fullscreenElement;
+}
+
+/** 全画面にして、できれば横向きに固定する（Android の Chrome など） */
+async function enterFullscreen() {
+  try {
+    await document.documentElement.requestFullscreen();
+    const o = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    await o.lock?.('landscape');
+  } catch {
+    // 対応していない端末では何もしない
+  }
 }

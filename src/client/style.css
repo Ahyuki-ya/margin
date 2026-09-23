@@ -706,11 +706,15 @@ tr.me {
 }
 
 .modal-buttons {
+  position: sticky;
+  bottom: -16px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
-  margin-top: 14px;
+  margin: 14px -18px -16px;
+  padding: 10px 18px 14px;
+  background: var(--card-bg);
 }
 
 .modal-buttons .btn {
@@ -907,4 +911,137 @@ input[type='checkbox'] {
   .yaku {
     columns: 1;
   }
+}
+
+/* ───────────── スマホ横画面 ─────────────
+   卓を中央に置き、左に局の情報と設定、右に操作ボタン、下に手牌を並べる */
+@media (orientation: landscape) and (max-height: 600px) {
+  .game {
+    --ht: min(calc((100vw - 24px) / 16.5), calc(100dvh * 0.105), 56px);
+    --hand-h: calc(var(--ht) * 1.42 + 4px + env(safe-area-inset-bottom));
+    --board: min(calc(100dvh - var(--hand-h) - 6px), calc(100vw - 300px));
+    display: grid;
+    grid-template-columns: 1fr var(--board) 1fr;
+    grid-template-rows: 1fr var(--hand-h);
+    grid-template-areas:
+      'top board act'
+      'hand hand hand';
+    align-items: stretch;
+    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  }
+
+  .topbar {
+    grid-area: top;
+    height: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .topbar .spacer {
+    display: none;
+  }
+
+  .board-wrap {
+    grid-area: board;
+    align-items: flex-end;
+  }
+
+  .actions {
+    grid-area: act;
+    height: auto;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    padding: 8px 12px;
+    overflow: visible;
+  }
+
+  .actions .btn {
+    width: 100%;
+  }
+
+  .myhand {
+    grid-area: hand;
+    padding-bottom: calc(2px + env(safe-area-inset-bottom));
+  }
+
+  .modal-card {
+    max-width: 720px;
+    padding: 12px 16px;
+  }
+
+  .modal-card h2 {
+    margin: 2px 0 6px;
+    font-size: 18px;
+  }
+
+  .yaku {
+    columns: 3;
+    margin: 6px 0;
+  }
+
+  .deltas td {
+    padding: 3px 6px;
+  }
+
+  .screen {
+    justify-content: flex-start;
+  }
+
+  .card {
+    max-width: 640px;
+  }
+}
+
+/* 縦向きのスマホでは横向きをすすめる */
+.rotate-hint {
+  display: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate-hint:not(.dismissed) {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 24px;
+    background: rgba(5, 25, 18, 0.94);
+    text-align: center;
+  }
+}
+
+.rotate-hint .rotate-icon {
+  width: 72px;
+  height: 72px;
+  animation: tilt 2.4s ease-in-out infinite;
+}
+
+@keyframes tilt {
+  0%,
+  30% {
+    rotate: 0deg;
+  }
+  60%,
+  100% {
+    rotate: -90deg;
+  }
+}
+
+.rotate-hint p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.btn-small.wide {
+  width: auto;
+  padding: 0 10px;
+  font-size: 13px;
 }

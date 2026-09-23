@@ -121,8 +121,9 @@ export function startLan(root: HTMLElement, name: string, onExit: () => void) {
           <label><input type="radio" name="aka" value="1" checked> あり</label>
           <label><input type="radio" name="aka" value="0"> なし</label></div>
         <div class="form-row"><span>CPU</span>
-          <label><input type="radio" name="cpu" value="random" checked> よわい（ランダム）</label>
-          <label><input type="radio" name="cpu" value="greedy"> ふつう</label></div>
+          <label><input type="radio" name="cpu" value="random"> よわい</label>
+          <label><input type="radio" name="cpu" value="greedy"> ふつう</label>
+          <label><input type="radio" name="cpu" value="strong" checked> つよい</label></div>
         <button class="btn big" data-lobby="start" ${lobby.running ? 'disabled' : ''}>対局開始</button>`
       : `<p class="note">${lobby.running ? '対局中です。' : 'ホストが対局を始めるのを待っています…'}</p>`;
     root.innerHTML = `

@@ -202,67 +202,117 @@ export function kokushiShanten(c: Counts): number {
   return 13 - kinds - (pair ? 1 : 0);
 }
 
+/**
+ * 一般形の向聴数。色ごとに「面子・塔子・雀頭の取り方」の候補を求めてから組み合わせる。
+ * 色ごとの候補は牌の並びだけで決まるので、結果を覚えておいて使い回す（CPU の読みで何度も呼ぶため）。
+ */
 export function standardShanten(c: Counts, meldCount: number): number {
-  let best = 8;
   const need = 4 - meldCount;
-  // 面子・塔子を数え上げる素朴な探索
-  const search = (i: number, mentsu: number, taatsu: number, hasPair: boolean) => {
-    while (i < NUM_KINDS && c[i] === 0) i++;
-    if (i >= NUM_KINDS) {
-      let t = Math.min(taatsu, need - mentsu);
-      const s = 2 * (need - mentsu) - t - (hasPair ? 1 : 0);
-      if (s < best) best = s;
+  const man = suitOptions(c, 0);
+  const pin = suitOptions(c, 9);
+  const sou = suitOptions(c, 18);
+  const hon = honorOptions(c);
+  let best = 8;
+  for (const a of man) {
+    for (const b of pin) {
+      const p2 = a[2] + b[2];
+      if (p2 > 1) continue;
+      for (const d of sou) {
+        const p3 = p2 + d[2];
+        if (p3 > 1) continue;
+        for (const h of hon) {
+          const p = p3 + h[2];
+          if (p > 1) continue;
+          const m = Math.min(a[0] + b[0] + d[0] + h[0], need);
+          const t = Math.min(a[1] + b[1] + d[1] + h[1], need - m);
+          const sh = 2 * (need - m) - t - p;
+          if (sh < best) best = sh;
+        }
+      }
+    }
+  }
+  return best;
+}
+
+/** [面子数, 塔子数, 雀頭 0/1] */
+type Option = [number, number, number];
+
+const suitMemo = new Map<number, Option[]>();
+
+function suitOptions(c: Counts, base: number): Option[] {
+  let key = 0;
+  for (let i = 0; i < 9; i++) key = key * 5 + c[base + i];
+  const cached = suitMemo.get(key);
+  if (cached) return cached;
+  const a = c.slice(base, base + 9);
+  const found = new Set<number>();
+  const rec = (i: number, m: number, t: number, p: number) => {
+    while (i < 9 && a[i] === 0) i++;
+    if (i >= 9) {
+      found.add(m * 64 + t * 2 + p);
       return;
     }
-    // 刻子
-    if (c[i] >= 3 && mentsu < need) {
-      c[i] -= 3;
-      search(i, mentsu + 1, taatsu, hasPair);
-      c[i] += 3;
+    if (a[i] >= 3) {
+      a[i] -= 3;
+      rec(i, m + 1, t, p);
+      a[i] += 3;
     }
-    // 順子
-    if (i < 27 && i % 9 <= 6 && c[i + 1] > 0 && c[i + 2] > 0 && mentsu < need) {
-      c[i]--;
-      c[i + 1]--;
-      c[i + 2]--;
-      search(i, mentsu + 1, taatsu, hasPair);
-      c[i]++;
-      c[i + 1]++;
-      c[i + 2]++;
+    if (i <= 6 && a[i + 1] > 0 && a[i + 2] > 0) {
+      a[i]--, a[i + 1]--, a[i + 2]--;
+      rec(i, m + 1, t, p);
+      a[i]++, a[i + 1]++, a[i + 2]++;
     }
-    // 雀頭
-    if (c[i] >= 2 && !hasPair) {
-      c[i] -= 2;
-      search(i, mentsu, taatsu, true);
-      c[i] += 2;
+    if (a[i] >= 2) {
+      a[i] -= 2;
+      if (p === 0) rec(i, m, t, 1);
+      rec(i, m, t + 1, p);
+      a[i] += 2;
     }
-    // 対子を塔子として
-    if (c[i] >= 2) {
-      c[i] -= 2;
-      search(i, mentsu, taatsu + 1, hasPair);
-      c[i] += 2;
+    if (i <= 7 && a[i + 1] > 0) {
+      a[i]--, a[i + 1]--;
+      rec(i, m, t + 1, p);
+      a[i]++, a[i + 1]++;
     }
-    // 両面・辺張
-    if (i < 27 && i % 9 <= 7 && c[i + 1] > 0) {
-      c[i]--;
-      c[i + 1]--;
-      search(i, mentsu, taatsu + 1, hasPair);
-      c[i]++;
-      c[i + 1]++;
+    if (i <= 6 && a[i + 2] > 0) {
+      a[i]--, a[i + 2]--;
+      rec(i, m, t + 1, p);
+      a[i]++, a[i + 2]++;
     }
-    // 嵌張
-    if (i < 27 && i % 9 <= 6 && c[i + 2] > 0) {
-      c[i]--;
-      c[i + 2]--;
-      search(i, mentsu, taatsu + 1, hasPair);
-      c[i]++;
-      c[i + 2]++;
-    }
-    // 孤立牌として捨てる
-    c[i]--;
-    search(i, mentsu, taatsu, hasPair);
-    c[i]++;
+    a[i]--;
+    rec(i, m, t, p);
+    a[i]++;
   };
-  search(0, 0, 0, false);
-  return best;
+  rec(0, 0, 0, 0);
+  const opts = paretoFront([...found].map((x) => [x >> 6, (x >> 1) & 31, x & 1] as Option));
+  suitMemo.set(key, opts);
+  return opts;
+}
+
+function honorOptions(c: Counts): Option[] {
+  let m = 0;
+  let pairs = 0;
+  let triples = 0;
+  for (let k = 27; k < 34; k++) {
+    if (c[k] >= 3) {
+      m++;
+      triples++;
+    } else if (c[k] === 2) {
+      pairs++;
+    }
+  }
+  const out: Option[] = [[m, pairs, 0]];
+  if (pairs > 0) out.push([m, pairs - 1, 1]);
+  // 刻子を崩して雀頭にする（ほかに雀頭候補がないとき用）
+  if (triples > 0) out.push([m - 1, pairs, 1]);
+  return paretoFront(out);
+}
+
+/** ほかの候補より面子・塔子・雀頭のどれも劣る候補を除く */
+function paretoFront(opts: Option[]): Option[] {
+  return opts.filter(
+    (o, i) =>
+      !opts.some(
+        (q, j) => j !== i && q[0] >= o[0] && q[1] >= o[1] && q[2] >= o[2] && (q[0] > o[0] || q[1] > o[1] || q[2] > o[2]),
+      ),
+  );
 }

@@ -15,7 +15,7 @@ interface Prefs {
 }
 
 function loadPrefs(): Prefs {
-  const def: Prefs = { length: 'hanchan', aka: true, cpu: 'random', speed: 'normal' };
+  const def: Prefs = { length: 'hanchan', aka: true, cpu: 'strong', speed: 'normal' };
   try {
     return { ...def, ...JSON.parse(localStorage.getItem(PREF_KEY) ?? '{}') };
   } catch {
@@ -62,8 +62,9 @@ async function showTitle() {
           ${radio('aka', '1', 'あり', prefs.aka)}
           ${radio('aka', '0', 'なし', !prefs.aka)}</div>
         <div class="form-row"><span>CPU</span>
-          ${radio('cpu', 'random', 'よわい（ランダム）', prefs.cpu === 'random')}
-          ${radio('cpu', 'greedy', 'ふつう', prefs.cpu === 'greedy')}</div>
+          ${radio('cpu', 'random', 'よわい', prefs.cpu === 'random')}
+          ${radio('cpu', 'greedy', 'ふつう', prefs.cpu === 'greedy')}
+          ${radio('cpu', 'strong', 'つよい', prefs.cpu === 'strong')}</div>
         <div class="form-row"><span>速さ</span>
           ${radio('speed', 'slow', 'ゆっくり', prefs.speed === 'slow')}
           ${radio('speed', 'normal', 'ふつう', prefs.speed === 'normal')}

@@ -6,7 +6,8 @@ import type { PlayerView } from '../engine/view.ts';
 import type { GameLog } from '../engine/log.ts';
 import type { Prompt } from '../ai/prompt.ts';
 
-export type CpuLevel = 'random' | 'greedy';
+import type { CpuLevel } from '../ai/index.ts';
+export type { CpuLevel };
 
 export type ClientMsg =
   /** 接続時の名乗り。token はブラウザごとに保存しておき、再接続で同じ席に戻るのに使う */
