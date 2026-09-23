@@ -1,0 +1,29 @@
+{
+  "name": "margin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ブラウザで遊べる4人打ちリーチ麻雀（CPU対戦・LAN対戦）",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite build && node server/index.ts",
+    "serve": "node server/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "selfplay": "node scripts/selfplay.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/ws": "^8.18.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
+  }
+}
