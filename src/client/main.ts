@@ -2,6 +2,8 @@
 
 import { savedName, startLan } from './lan.ts';
 import { startLocalGame, type CpuLevel } from './local.ts';
+import { TIME_LABELS, type TimeKey } from '../ai/prompt.ts';
+import { helpHtml } from './help.ts';
 
 const app = document.getElementById('app')!;
 
@@ -12,10 +14,11 @@ interface Prefs {
   aka: boolean;
   cpu: CpuLevel;
   speed: 'slow' | 'normal' | 'fast';
+  time: TimeKey;
 }
 
 function loadPrefs(): Prefs {
-  const def: Prefs = { length: 'hanchan', aka: true, cpu: 'strong', speed: 'normal' };
+  const def: Prefs = { length: 'hanchan', aka: true, cpu: 'strong', speed: 'normal', time: 'none' };
   try {
     return { ...def, ...JSON.parse(localStorage.getItem(PREF_KEY) ?? '{}') };
   } catch {
@@ -31,7 +34,6 @@ function savePrefs(p: Prefs) {
   }
 }
 
-const SPEED_MS = { slow: 900, normal: 500, fast: 150 };
 
 /** LAN サーバーから配信されているか（GitHub Pages では false） */
 async function detectLan(): Promise<boolean> {
@@ -69,8 +71,18 @@ async function showTitle() {
           ${radio('speed', 'slow', 'ゆっくり', prefs.speed === 'slow')}
           ${radio('speed', 'normal', 'ふつう', prefs.speed === 'normal')}
           ${radio('speed', 'fast', 'はやい', prefs.speed === 'fast')}</div>
+        <div class="form-row"><span>持ち時間</span>
+          ${(Object.keys(TIME_LABELS) as TimeKey[]).map((k) => radio('time', k, TIME_LABELS[k], prefs.time === k)).join('')}</div>
+        <p class="note small">持ち時間「15+30秒」は、1 手ごとに 15 秒（毎回元に戻る）と、対局全体で使い切る予備の 30 秒です。</p>
         <button class="btn big" id="start-cpu">CPU と対戦</button>
         <div id="lan-area"></div>
+        <button class="btn ghost help-btn" id="show-help">遊び方・LAN 対戦のやり方</button>
+      </div>
+      <div class="menu hidden" id="help-overlay">
+        <div class="menu-panel wide" role="dialog" aria-label="遊び方">
+          ${helpHtml()}
+          <div class="menu-buttons"><button class="btn" id="close-help">閉じる</button></div>
+        </div>
       </div>
       <p class="footer-note">ルール：25000点持ち30000点返し・喰いタンあり・後付けあり・ダブロンあり</p>
     </div>`;
@@ -80,6 +92,14 @@ async function showTitle() {
     aka: (app.querySelector('input[name="aka"]:checked') as HTMLInputElement).value === '1',
     cpu: (app.querySelector('input[name="cpu"]:checked') as HTMLInputElement).value as CpuLevel,
     speed: (app.querySelector('input[name="speed"]:checked') as HTMLInputElement).value as Prefs['speed'],
+    time: (app.querySelector('input[name="time"]:checked') as HTMLInputElement).value as TimeKey,
+  });
+
+  const overlay = app.querySelector<HTMLElement>('#help-overlay')!;
+  app.querySelector('#show-help')!.addEventListener('click', () => overlay.classList.remove('hidden'));
+  app.querySelector('#close-help')!.addEventListener('click', () => overlay.classList.add('hidden'));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.add('hidden');
   });
 
   app.querySelector('#start-cpu')!.addEventListener('click', () => {
@@ -88,8 +108,10 @@ async function showTitle() {
     startLocalGame(app, {
       rules: { length: p.length, aka: p.aka },
       cpu: p.cpu,
-      cpuDelay: SPEED_MS[p.speed],
+      speed: p.speed,
+      time: p.time,
       onExit: showTitle,
+      onSpeedChange: (speed) => savePrefs({ ...loadPrefs(), speed }),
     });
   });
 

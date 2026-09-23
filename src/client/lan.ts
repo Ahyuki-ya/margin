@@ -5,6 +5,7 @@ import type { ClientMsg, CpuLevel, LobbyMember, ServerMsg } from '../net/protoco
 import { announceText } from './announce.ts';
 import { downloadLog } from './local.ts';
 import { TableUI } from './table.ts';
+import { TIME_LABELS, type TimeKey } from '../ai/prompt.ts';
 
 const TOKEN_KEY = 'margin.lan.token';
 const NAME_KEY = 'margin.lan.name';
@@ -124,6 +125,8 @@ export function startLan(root: HTMLElement, name: string, onExit: () => void) {
           <label><input type="radio" name="cpu" value="random"> よわい</label>
           <label><input type="radio" name="cpu" value="greedy"> ふつう</label>
           <label><input type="radio" name="cpu" value="strong" checked> つよい</label></div>
+        <div class="form-row"><span>持ち時間</span>
+          ${(Object.keys(TIME_LABELS) as TimeKey[]).map((k) => `<label><input type="radio" name="time" value="${k}" ${k === '15+30' ? 'checked' : ''}> ${TIME_LABELS[k]}</label>`).join('')}</div>
         <button class="btn big" data-lobby="start" ${lobby.running ? 'disabled' : ''}>対局開始</button>`
       : `<p class="note">${lobby.running ? '対局中です。' : 'ホストが対局を始めるのを待っています…'}</p>`;
     root.innerHTML = `
@@ -143,7 +146,8 @@ export function startLan(root: HTMLElement, name: string, onExit: () => void) {
       const len = (root.querySelector('input[name="len"]:checked') as HTMLInputElement).value as 'hanchan' | 'tonpuu';
       const aka = (root.querySelector('input[name="aka"]:checked') as HTMLInputElement).value === '1';
       const cpu = (root.querySelector('input[name="cpu"]:checked') as HTMLInputElement).value as CpuLevel;
-      sendMsg({ t: 'start', rules: { length: len, aka }, cpu });
+      const time = (root.querySelector('input[name="time"]:checked') as HTMLInputElement).value as TimeKey;
+      sendMsg({ t: 'start', rules: { length: len, aka }, cpu, time });
     });
     root.querySelector('[data-lobby="leave"]')?.addEventListener('click', leave);
   };
@@ -173,7 +177,7 @@ export function startLan(root: HTMLElement, name: string, onExit: () => void) {
           });
         }
         gameOver = msg.view.phase === 'gameEnd';
-        table.render({ view: msg.view, names: msg.names, prompt: msg.prompt, ack: msg.ack, waiting: msg.waiting });
+        table.render({ view: msg.view, names: msg.names, prompt: msg.prompt, ack: msg.ack, ackTime: msg.ackTime, waiting: msg.waiting });
         if (msg.last) {
           const key = JSON.stringify(msg.last) + msg.view.players.map((p) => p.discards.length).join();
           const text = announceText(msg.last.action);

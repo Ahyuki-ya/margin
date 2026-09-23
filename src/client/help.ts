@@ -1,0 +1,72 @@
+// 遊び方（設定メニューとタイトル画面から開く説明文）
+
+const RULE_LINKS = [
+  {
+    title: 'キンマweb｜麻雀初心者のためのルール解説・入門編',
+    note: '『近代麻雀』編集部監修。11 のステップで順に覚えられます',
+    url: 'https://kinmaweb.jp/mahjong-rule/beginner',
+  },
+  {
+    title: '雀入門｜麻雀初心者のためのルール解説サイト',
+    note: '役の一覧や点数計算がまとまっています',
+    url: 'https://www.jannyumon.jp/',
+  },
+  {
+    title: '麻雀ステーション｜麻雀ルールを簡単にわかりやすく解説',
+    note: '面子・雀頭などの基本から解説しています',
+    url: 'https://mj-station.net/rule/',
+  },
+];
+
+export function helpHtml(): string {
+  const links = RULE_LINKS.map(
+    (l) => `<li><a href="${l.url}" target="_blank" rel="noopener noreferrer">${l.title}</a><br><small>${l.note}</small></li>`,
+  ).join('');
+  return `
+    <div class="help">
+      <h3>遊び方</h3>
+
+      <h4>基本の操作</h4>
+      <ul>
+        <li>自分の番になったら、捨てたい牌をクリックします。スマホでは 1 回目のタップで牌を選び、2 回目のタップで捨てます。</li>
+        <li>ツモ・ロン・ポン・チー・カンができるときは、右（PC では手牌の上）にボタンが出ます。鳴かないときは「スキップ」。</li>
+        <li>リーチは「リーチ」ボタンを押してから、捨てる牌を選びます（聴牌になる牌だけ選べます）。</li>
+        <li>河で黄色い枠がついているのが、直前に捨てられた牌です。</li>
+        <li>局が終わると結果が出ます。「次へ」で次の局に進みます。</li>
+      </ul>
+
+      <h4>設定（≡ メニュー）</h4>
+      <ul>
+        <li><b>手牌の大きさ</b>：小・中・大・特大。大きくすると卓が少し小さくなります。</li>
+        <li><b>CPU の速さ</b>：CPU が打つまでの待ち時間です（CPU 対戦のみ）。</li>
+        <li><b>自動和了</b>：和了できるときに自動で和了ります。</li>
+        <li><b>鳴きなし</b>：ポン・チー・カンの確認を出さずに見送ります。</li>
+      </ul>
+
+      <h4>持ち時間</h4>
+      <p>「15+30秒」なら、1 手ごとに 15 秒（毎回元に戻る）と、対局全体で使い切る予備の 30 秒があります。1 手ごとの時間を過ぎると予備の時間から減っていき（数字が黄色になります）、両方なくなると自動でツモ切り（鳴きの確認なら見送り）になります。局の結果画面は 1 手ごとの時間が過ぎると自動で進みます。</p>
+
+      <h4>LAN 対戦（同じ Wi-Fi で遊ぶ）</h4>
+      <p>1 台の PC がホストになり、ほかの人はブラウザで参加します。4 人に満たない席には CPU が入ります。インターネット上の版（GitHub Pages）は CPU 対戦だけです。</p>
+      <ol>
+        <li>ホストの PC に <a href="https://nodejs.org/" target="_blank" rel="noopener noreferrer">Node.js</a>（22.18 以上）を入れます。</li>
+        <li>ターミナルで次を実行します。<pre>git clone https://github.com/Ahyuki-ya/margin.git
+cd margin
+npm install
+npm start</pre></li>
+        <li>表示された「同じWi-Fiの人: http://192.168.x.x:8080」のアドレスを、参加する人のブラウザ（スマホでも可）で開きます。ホスト自身は http://localhost:8080 を開きます。</li>
+        <li>名前を入れて「LAN 対戦に参加」。最初に入った人がホストになり、ルール・CPU の強さ・持ち時間を選んで「対局開始」を押します。</li>
+      </ol>
+      <ul>
+        <li>接続が切れても、同じブラウザで開き直せば同じ席に戻れます。</li>
+        <li>対局の記録（牌譜）はホストの PC の <code>logs</code> フォルダに保存されます。</li>
+        <li>つながらないときは、ホストの PC のファイアウォールで Node.js の通信が許可されているか確認してください。</li>
+      </ul>
+
+      <h4>このゲームのルール</h4>
+      <p>標準的な日本のリーチ麻雀です。25,000 点持ち・30,000 点返し、赤ドラあり（選択可）、喰いタン・後付けあり、ダブロンあり、途中流局あり。詳しくは <a href="https://github.com/Ahyuki-ya/margin#readme" target="_blank" rel="noopener noreferrer">README</a> を見てください。</p>
+
+      <h4>麻雀のルールを覚えるには</h4>
+      <ul class="links">${links}</ul>
+    </div>`;
+}

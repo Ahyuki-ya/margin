@@ -13,7 +13,7 @@ import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { Agent } from '../src/ai/agent.ts';
 import { makeCpu, parseCpuLevel, type CpuLevel } from '../src/ai/index.ts';
-import { PromptAgent } from '../src/ai/prompt.ts';
+import { parseTimeKey, PromptAgent, TIME_CONTROLS, type TimeKey } from '../src/ai/prompt.ts';
 import { randomSeed } from '../src/engine/rng.ts';
 import type { Rules } from '../src/engine/rules.ts';
 import type { Action, Seat } from '../src/engine/types.ts';
@@ -106,6 +106,7 @@ function sendState(m: Member) {
     names,
     prompt: m.agent.prompt,
     ack: m.agent.ackId,
+    ackTime: m.agent.ackTime,
     waiting,
     last: lastAction,
   });
@@ -115,7 +116,7 @@ function broadcastState() {
   for (const m of members) sendState(m);
 }
 
-function startGame(rules: Partial<Rules>, cpu: CpuLevel) {
+function startGame(rules: Partial<Rules>, cpu: CpuLevel, time: TimeKey) {
   const humans = members.slice(0, MAX_HUMANS);
   // 席はランダム
   const seats = ([0, 1, 2, 3] as Seat[]).sort(() => Math.random() - 0.5);
@@ -123,12 +124,13 @@ function startGame(rules: Partial<Rules>, cpu: CpuLevel) {
   names = [];
   let cpuNo = 0;
   for (const m of members) {
+    m.agent?.dispose();
     m.seat = undefined;
     m.agent = undefined;
   }
   humans.forEach((m, i) => {
     m.seat = seats[i];
-    m.agent = new PromptAgent();
+    m.agent = new PromptAgent(TIME_CONTROLS[time]);
     m.agent.onChange = () => broadcastState();
   });
   for (let s = 0; s < 4; s++) {
@@ -218,6 +220,7 @@ function onMessage(ws: WebSocket, raw: string, self: { member?: Member }) {
       startGame(
         { length: msg.rules?.length === 'tonpuu' ? 'tonpuu' : 'hanchan', aka: msg.rules?.aka !== false },
         parseCpuLevel(msg.cpu),
+        parseTimeKey(msg.time),
       );
       break;
     case 'action':

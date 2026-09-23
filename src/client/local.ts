@@ -10,20 +10,23 @@ import type { Seat } from '../engine/types.ts';
 import { viewFor } from '../engine/view.ts';
 import { GameRunner } from '../runner.ts';
 import { announceText } from './announce.ts';
-import { TableUI } from './table.ts';
-import { PromptAgent } from '../ai/prompt.ts';
+import { SPEED_MS, TableUI, type Speed } from './table.ts';
+import { PromptAgent, TIME_CONTROLS, type TimeKey } from '../ai/prompt.ts';
 
 export type { CpuLevel };
 
 export interface LocalOptions {
   rules: Partial<Rules>;
   cpu: CpuLevel;
-  cpuDelay: number;
+  speed: Speed;
+  /** 持ち時間 */
+  time: TimeKey;
   onExit: () => void;
+  onSpeedChange?: (speed: Speed) => void;
 }
 
 export function startLocalGame(root: HTMLElement, opts: LocalOptions) {
-  const human = new PromptAgent();
+  const human = new PromptAgent(TIME_CONTROLS[opts.time]);
   const humanSeat = Math.floor(Math.random() * 4) as Seat;
   const agents: Agent[] = [0, 1, 2, 3].map((s) => (s === humanSeat ? human : makeCpu(opts.cpu)));
   let n = 0;
@@ -35,10 +38,18 @@ export function startLocalGame(root: HTMLElement, opts: LocalOptions) {
     onAck: (id) => human.ack(id),
     onExit: () => {
       runner.stop();
+      human.dispose();
       ui.destroy();
       opts.onExit();
     },
     onSaveLog: () => downloadLog(runner.log),
+    speed: {
+      value: opts.speed,
+      onChange: (speed) => {
+        runner.setCpuDelay(SPEED_MS[speed]);
+        opts.onSpeedChange?.(speed);
+      },
+    },
   });
 
   const draw = (game: Game) => {
@@ -47,6 +58,7 @@ export function startLocalGame(root: HTMLElement, opts: LocalOptions) {
       names,
       prompt: human.prompt,
       ack: human.ackId,
+      ackTime: human.ackTime,
     });
   };
 
@@ -55,7 +67,7 @@ export function startLocalGame(root: HTMLElement, opts: LocalOptions) {
     rules: opts.rules,
     agents,
     names,
-    cpuDelay: opts.cpuDelay,
+    cpuDelay: SPEED_MS[opts.speed],
     onUpdate: (game, last) => {
       draw(game);
       if (last) {

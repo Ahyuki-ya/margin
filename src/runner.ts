@@ -40,6 +40,11 @@ export class GameRunner {
     this.stopped = true;
   }
 
+  /** CPU の待ち時間を対局中に変える */
+  setCpuDelay(ms: number) {
+    this.opts.cpuDelay = ms;
+  }
+
   async run(): Promise<GameLog> {
     const { game, opts } = this;
     opts.onUpdate?.(game);

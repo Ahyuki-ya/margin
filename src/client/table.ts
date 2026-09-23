@@ -5,6 +5,7 @@ import { compareTiles, kindName, kindOf, WIND_NAMES, type Tile } from '../engine
 import type { Action, DrawReason, Meld, RoundResult, Seat } from '../engine/types.ts';
 import type { PlayerView } from '../engine/view.ts';
 import { tileSvg } from './tiles.ts';
+import { helpHtml } from './help.ts';
 
 import type { Prompt } from '../ai/prompt.ts';
 export type { Prompt };
@@ -17,7 +18,16 @@ export interface TableState {
   ack: number | null;
   /** 確認済みで他のプレイヤーを待っている */
   waiting?: boolean;
+  /** 局の結果を自動で進めるまでの時間（ミリ秒。持ち時間ありのとき） */
+  ackTime?: number | null;
 }
+
+export type Speed = 'slow' | 'normal' | 'fast';
+
+export const SPEED_LABELS: Record<Speed, string> = { slow: 'ゆっくり', normal: 'ふつう', fast: 'はやい' };
+
+/** CPU が打つまでの待ち時間（ミリ秒） */
+export const SPEED_MS: Record<Speed, number> = { slow: 900, normal: 500, fast: 150 };
 
 export interface TableHandlers {
   onAction(promptId: number, action: Action): void;
@@ -25,11 +35,23 @@ export interface TableHandlers {
   onExit(): void;
   /** 牌譜の保存（終局後） */
   onSaveLog?(): void;
+  /** CPU の速さの変更（CPU 対戦のみ。LAN 対戦ではホストが決める） */
+  speed?: { value: Speed; onChange(speed: Speed): void };
 }
+
+type HandSize = 'S' | 'M' | 'L' | 'XL';
+
+const HAND_SIZES: { key: HandSize; label: string; scale: number }[] = [
+  { key: 'S', label: '小', scale: 0.85 },
+  { key: 'M', label: '中', scale: 1 },
+  { key: 'L', label: '大', scale: 1.2 },
+  { key: 'XL', label: '特大', scale: 1.4 },
+];
 
 interface Settings {
   autoWin: boolean;
   noCall: boolean;
+  handSize: HandSize;
 }
 
 const SETTINGS_KEY = 'margin.settings';
@@ -37,9 +59,10 @@ const SETTINGS_KEY = 'margin.settings';
 function loadSettings(): Settings {
   try {
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
-    return { autoWin: !!s.autoWin, noCall: !!s.noCall };
+    const handSize = HAND_SIZES.some((h) => h.key === s.handSize) ? (s.handSize as HandSize) : 'M';
+    return { autoWin: !!s.autoWin, noCall: !!s.noCall, handSize };
   } catch {
-    return { autoWin: false, noCall: false };
+    return { autoWin: false, noCall: false, handSize: 'M' };
   }
 }
 
@@ -99,6 +122,12 @@ export class TableUI {
   private elActions: HTMLElement;
   private elHand: HTMLElement;
   private elModal: HTMLElement;
+  private elMenu: HTMLElement;
+  private elGame: HTMLElement;
+  private elTimer: HTMLElement;
+  /** 残り時間の表示（どの問いの時間か・受け取った時刻・時間） */
+  private clock: { key: string; start: number; per: number; bank: number; ack: boolean } | null = null;
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(root: HTMLElement, handlers: TableHandlers) {
     this.root = root;
@@ -110,6 +139,8 @@ export class TableUI {
         <div class="actions"></div>
         <div class="myhand"></div>
         <div class="modal hidden"></div>
+        <div class="menu hidden" data-cmd="menu-close"></div>
+        <div class="timer hidden" aria-live="off"></div>
         <div class="rotate-hint">
           <svg class="rotate-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="4" width="20" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="24" cy="38" r="2" fill="currentColor"/></svg>
           <p>スマホを横向きにすると<br>遊びやすくなります</p>
@@ -122,10 +153,15 @@ export class TableUI {
     this.elActions = root.querySelector('.actions')!;
     this.elHand = root.querySelector('.myhand')!;
     this.elModal = root.querySelector('.modal')!;
+    this.elMenu = root.querySelector('.menu')!;
+    this.elGame = root.querySelector('.game')!;
+    this.elTimer = root.querySelector('.timer')!;
+    this.applyHandSize();
     root.addEventListener('click', (e) => this.onClick(e));
   }
 
   destroy() {
+    this.stopClock();
     this.root.innerHTML = '';
   }
 
@@ -145,6 +181,58 @@ export class TableUI {
     this.renderActions();
     this.renderHand();
     this.renderModal();
+    this.updateClock();
+  }
+
+  // ───────────── 持ち時間の表示 ─────────────
+
+  /** 今の問いに持ち時間があれば、残り時間の表示を始める */
+  private updateClock() {
+    const st = this.state!;
+    const p = st.prompt;
+    let next: { key: string; per: number; bank: number; ack: boolean } | null = null;
+    if (p && p.id !== this.answeredPrompt && p.time) {
+      next = { key: `p${p.id}`, per: p.time.perAction, bank: p.time.bank, ack: false };
+    } else if (st.ack !== null && st.ack !== this.answeredAck && st.ackTime) {
+      next = { key: `a${st.ack}`, per: st.ackTime, bank: 0, ack: true };
+    }
+    if (!next) {
+      this.stopClock();
+      return;
+    }
+    // 同じ問いが送り直されても、最初に受け取った時刻から数える
+    if (this.clock?.key !== next.key) this.clock = { ...next, start: performance.now() };
+    if (!this.clockTimer) this.clockTimer = setInterval(() => this.tickClock(), 200);
+    this.tickClock();
+  }
+
+  private tickClock() {
+    const c = this.clock;
+    if (!c) return;
+    const elapsed = performance.now() - c.start;
+    const perLeft = c.per - elapsed;
+    const bankLeft = Math.max(0, c.bank + Math.min(0, perLeft));
+    const sec = (ms: number) => Math.ceil(Math.max(0, ms) / 1000);
+    if (c.ack) {
+      this.elTimer.classList.add('hidden');
+      const btn = this.elModal.querySelector<HTMLElement>('[data-cmd="ack"]');
+      if (btn) btn.textContent = `次へ（${sec(perLeft)}）`;
+      return;
+    }
+    const inBank = perLeft <= 0;
+    this.elTimer.classList.remove('hidden');
+    this.elTimer.classList.toggle('bank', inBank);
+    this.elTimer.classList.toggle('urgent', (inBank ? bankLeft : perLeft + c.bank) < 5000);
+    this.elTimer.innerHTML = inBank
+      ? `<span class="t-main">${sec(bankLeft)}</span>`
+      : `<span class="t-main">${sec(perLeft)}</span><span class="t-bank">+${sec(c.bank)}</span>`;
+  }
+
+  private stopClock() {
+    if (this.clockTimer) clearInterval(this.clockTimer);
+    this.clockTimer = null;
+    this.clock = null;
+    this.elTimer?.classList.add('hidden');
   }
 
   /** 設定に応じて自動で答える（自動和了・鳴きなし） */
@@ -166,14 +254,48 @@ export class TableUI {
 
   private renderTop() {
     const v = this.state!.view;
+    const flags = [this.settings.autoWin ? '自動和了' : '', this.settings.noCall ? '鳴きなし' : ''].filter(Boolean);
     this.elTop.innerHTML = `
-      <button class="btn-small" data-cmd="exit" title="タイトルへ戻る">≡</button>
+      <button class="btn-small" data-cmd="menu" title="設定" aria-label="設定メニュー">≡</button>
       <span class="round">${roundLabel(v)} ${v.honba}本場</span>
       <span class="chip">供託 ${v.riichiSticks}</span>
-      <span class="spacer"></span>
-      ${canFullscreen() ? '<button class="btn-small wide" data-cmd="fullscreen">全画面</button>' : ''}
-      <label class="toggle"><input type="checkbox" data-setting="autoWin" ${this.settings.autoWin ? 'checked' : ''}>自動和了</label>
-      <label class="toggle"><input type="checkbox" data-setting="noCall" ${this.settings.noCall ? 'checked' : ''}>鳴きなし</label>`;
+      ${flags.map((f) => `<span class="flag">${f}</span>`).join('')}`;
+  }
+
+  private applyHandSize() {
+    const scale = HAND_SIZES.find((h) => h.key === this.settings.handSize)?.scale ?? 1;
+    this.elGame.style.setProperty('--hand-scale', String(scale));
+  }
+
+  /** 設定メニュー（≡ で開く） */
+  private renderMenu() {
+    const seg = (items: { key: string; label: string }[], current: string, attr: string) =>
+      `<div class="seg">${items
+        .map((i) => `<button class="${i.key === current ? 'on' : ''}" data-${attr}="${i.key}">${i.label}</button>`)
+        .join('')}</div>`;
+    const speed = this.handlers.speed;
+    this.elMenu.innerHTML = `
+      <div class="menu-panel" role="dialog" aria-label="設定">
+        <h3>設定</h3>
+        <div class="menu-row"><span>手牌の大きさ</span>${seg(HAND_SIZES, this.settings.handSize, 'size')}</div>
+        ${
+          speed
+            ? `<div class="menu-row"><span>CPU の速さ</span>${seg(
+                (Object.keys(SPEED_LABELS) as Speed[]).map((k) => ({ key: k, label: SPEED_LABELS[k] })),
+                speed.value,
+                'speed',
+              )}</div>`
+            : ''
+        }
+        <label class="menu-row"><span>自動和了<small>和了できるとき自動で和了る</small></span><input type="checkbox" class="switch" data-setting="autoWin" ${this.settings.autoWin ? 'checked' : ''}></label>
+        <label class="menu-row"><span>鳴きなし<small>ポン・チー・カンの確認を出さない</small></span><input type="checkbox" class="switch" data-setting="noCall" ${this.settings.noCall ? 'checked' : ''}></label>
+        <div class="menu-buttons">
+          <button class="btn ghost" data-cmd="help">遊び方</button>
+          ${canFullscreen() ? '<button class="btn ghost" data-cmd="fullscreen">全画面</button>' : ''}
+          <button class="btn ghost" data-cmd="exit">タイトルへ戻る</button>
+          <button class="btn" data-cmd="menu-close">閉じる</button>
+        </div>
+      </div>`;
   }
 
   private renderBoard() {
@@ -379,20 +501,34 @@ export class TableUI {
     const p = this.state?.prompt;
     if (!p || p.id === this.answeredPrompt) return;
     this.answeredPrompt = p.id;
+    this.stopClock();
     this.riichiMode = false;
     this.choosing = null;
     this.handlers.onAction(p.id, a);
   }
 
   private onClick(e: Event) {
-    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-discard],[data-cmd],[data-choose],[data-setting]');
+    const target = (e.target as HTMLElement).closest<HTMLElement>('[data-act],[data-discard],[data-cmd],[data-choose],[data-setting],[data-size],[data-speed]');
     if (!target || !this.state) return;
     const legal = this.state.prompt?.legal ?? [];
     if (target.dataset.setting) {
-      const key = target.dataset.setting as keyof Settings;
+      const key = target.dataset.setting as 'autoWin' | 'noCall';
       this.settings[key] = (target as HTMLInputElement).checked;
       saveSettings(this.settings);
       this.render(this.state);
+      return;
+    }
+    if (target.dataset.size) {
+      this.settings.handSize = target.dataset.size as HandSize;
+      saveSettings(this.settings);
+      this.applyHandSize();
+      this.renderMenu();
+      return;
+    }
+    if (target.dataset.speed && this.handlers.speed) {
+      this.handlers.speed.value = target.dataset.speed as Speed;
+      this.handlers.speed.onChange(this.handlers.speed.value);
+      this.renderMenu();
       return;
     }
     if (target.dataset.act !== undefined) {
@@ -433,9 +569,29 @@ export class TableUI {
       case 'ack':
         if (this.state.ack !== null) {
           this.answeredAck = this.state.ack;
+          this.stopClock();
           this.handlers.onAck(this.state.ack);
           this.renderModal();
         }
+        break;
+      case 'menu':
+        this.renderMenu();
+        this.elMenu.classList.remove('hidden');
+        break;
+      case 'help':
+        this.elMenu.innerHTML = `
+          <div class="menu-panel wide" role="dialog" aria-label="遊び方">
+            ${helpHtml()}
+            <div class="menu-buttons">
+              <button class="btn ghost" data-cmd="menu">設定に戻る</button>
+              <button class="btn" data-cmd="menu-close">閉じる</button>
+            </div>
+          </div>`;
+        break;
+      case 'menu-close':
+        // パネルの中をクリックしたときは閉じない（背景と「閉じる」だけ）
+        if (target === this.elMenu && e.target !== this.elMenu) break;
+        this.elMenu.classList.add('hidden');
         break;
       case 'hide-hint':
         this.root.querySelector('.rotate-hint')?.classList.add('dismissed');
