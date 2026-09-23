@@ -12,6 +12,7 @@ import {
   getOrientation,
   installTipHtml,
   isTouchDevice,
+  setInGame,
   setOrientation,
   type Orientation,
 } from './display.ts';
@@ -161,12 +162,14 @@ export class TableUI {
     this.elGame = root.querySelector('.game')!;
     this.elTimer = root.querySelector('.timer')!;
     this.applyHandSize();
+    setInGame(true);
     root.addEventListener('click', (e) => this.onClick(e));
   }
 
   destroy() {
     this.stopClock();
     this.root.innerHTML = '';
+    setInGame(false);
   }
 
   // ───────────── 描画 ─────────────
@@ -308,7 +311,7 @@ export class TableUI {
         <h3>設定</h3>
         ${
           isTouchDevice()
-            ? `<div class="menu-row"><span>画面の向き<small>端末の回転ロック中でも横向きで遊べます</small></span>${seg(
+            ? `<div class="menu-row"><span>対局画面の向き<small>端末の回転ロック中でも横向きで遊べます</small></span>${seg(
                 [
                   { key: 'landscape', label: '横' },
                   { key: 'portrait', label: '縦' },

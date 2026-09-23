@@ -85,7 +85,7 @@ async function showTitle() {
         <p class="note small">持ち時間「15+30秒」は、1 手ごとに 15 秒（毎回元に戻る）と、対局全体で使い切る予備の 30 秒です。</p>
         ${
           isTouchDevice()
-            ? `<div class="form-row"><span>画面</span>
+            ? `<div class="form-row wide"><span>対局画面</span>
           ${radio('orient', 'landscape', '横向き', getOrientation() === 'landscape')}
           ${radio('orient', 'portrait', '縦向き', getOrientation() === 'portrait')}</div>`
             : ''

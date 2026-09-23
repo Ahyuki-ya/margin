@@ -28,6 +28,14 @@ export function setOrientation(o: Orientation) {
 
 let current: Orientation | null = null;
 
+/** 回転するのは対局画面だけ（タイトル・ロビーは端末の向きのまま） */
+let inGame = false;
+
+export function setInGame(v: boolean) {
+  inGame = v;
+  applyDisplay();
+}
+
 /** タッチ操作の端末か（PC では回転しない） */
 export function isTouchDevice(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
@@ -61,7 +69,7 @@ export function applyDisplay() {
   const pw = Math.round(vv?.width ?? window.innerWidth);
   const ph = Math.round(vv?.height ?? window.innerHeight);
   const physPortrait = ph > pw;
-  const rotate = isTouchDevice() && (want === 'landscape') === physPortrait;
+  const rotate = inGame && isTouchDevice() && (want === 'landscape') === physPortrait;
   const w = rotate ? ph : pw;
   const h = rotate ? pw : ph;
 
