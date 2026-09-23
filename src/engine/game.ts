@@ -75,6 +75,10 @@ interface PendingResponse {
 export interface GameOptions {
   seed: number;
   rules?: Partial<Rules>;
+  /** 局ごとの牌山を直接指定する（テスト用）。指定のない局は乱数で作る */
+  walls?: Tile[][];
+  /** 開始時の持ち点（テスト用） */
+  scores?: number[];
 }
 
 const LIVE_WALL_END = 122; // 136 - 王牌 14 枚
@@ -125,11 +129,14 @@ export class Game {
   /** 開始した局の数 */
   roundCount = 0;
 
+  private fixedWalls: Tile[][];
+
   constructor(opts: GameOptions) {
     this.rules = withDefaults(opts.rules);
     this.seed = opts.seed >>> 0;
     this.rng = new Rng(this.seed);
-    this.players = [0, 1, 2, 3].map(() => this.emptyPlayer(this.rules.startPoints));
+    this.fixedWalls = opts.walls ?? [];
+    this.players = [0, 1, 2, 3].map((i) => this.emptyPlayer(opts.scores?.[i] ?? this.rules.startPoints));
     this.startRound();
   }
 
@@ -190,7 +197,8 @@ export class Game {
 
   private startRound() {
     this.roundCount++;
-    this.wall = this.rng.shuffle(Array.from({ length: NUM_TILES }, (_, i) => i));
+    const shuffled = this.rng.shuffle(Array.from({ length: NUM_TILES }, (_, i) => i));
+    this.wall = this.fixedWalls[this.roundCount - 1]?.slice() ?? shuffled;
     this.livePtr = 0;
     this.kanCount = 0;
     this.doraCount = 1;
