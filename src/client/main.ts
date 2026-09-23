@@ -80,7 +80,7 @@ async function showTitle() {
           ${radio('speed', 'slow', 'ゆっくり', prefs.speed === 'slow')}
           ${radio('speed', 'normal', 'ふつう', prefs.speed === 'normal')}
           ${radio('speed', 'fast', 'はやい', prefs.speed === 'fast')}</div>
-        <div class="form-row"><span>持ち時間</span>
+        <div class="form-row wide"><span>持ち時間</span>
           ${(Object.keys(TIME_LABELS) as TimeKey[]).map((k) => radio('time', k, TIME_LABELS[k], prefs.time === k)).join('')}</div>
         <p class="note small">持ち時間「15+30秒」は、1 手ごとに 15 秒（毎回元に戻る）と、対局全体で使い切る予備の 30 秒です。</p>
         ${

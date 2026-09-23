@@ -90,7 +90,8 @@ export function applyDisplay() {
   const uh = h - safe.t - safe.b;
   app.style.setProperty('--vw', `${uw}px`);
   app.style.setProperty('--vh', `${uh}px`);
-  app.classList.toggle('land', uw > uh && uh <= 600);
+  // 横長の画面（スマホの横向き・PC）では、横長の卓と点数表の配置にする
+  app.classList.toggle('land', uw >= uh * 1.25 || (uw > uh && uh <= 600));
   app.classList.toggle('narrow', uw <= 420);
 }
 

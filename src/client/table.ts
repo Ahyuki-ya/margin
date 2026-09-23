@@ -259,11 +259,36 @@ export class TableUI {
   private renderTop() {
     const v = this.state!.view;
     const flags = [this.settings.autoWin ? '自動和了' : '', this.settings.noCall ? '鳴きなし' : ''].filter(Boolean);
+    // 点数表：自分から見た方向の順（対面・上家・下家・自分）
+    const pend = v.pendingTile;
+    const dirs = [
+      { rel: 2, arrow: '↑', label: '対面' },
+      { rel: 3, arrow: '←', label: '上家' },
+      { rel: 1, arrow: '→', label: '下家' },
+      { rel: 0, arrow: '↓', label: '自分' },
+    ];
+    const rows = dirs
+      .map(({ rel, arrow, label }) => {
+        const seat = (v.seat + rel) % 4;
+        const p = v.players[seat];
+        const isTurn = (v.phase === 'turn' && v.current === seat) || (pend && pend.from === seat);
+        return `<div class="pp-row ${isTurn ? 'active' : ''} ${rel === 0 ? 'me' : ''}">
+            <span class="pp-dir">${arrow}<small>${label}</small></span>
+            <span class="pp-wind ${seat === v.dealer ? 'dealer' : ''}">${WIND_NAMES[p.seatWind - 27]}</span>
+            <span class="pp-name">${escapeHtml(this.state!.names[seat] ?? '')}</span>
+            <span class="pp-score">${p.score}</span>
+            ${p.riichi ? '<span class="pp-riichi">リーチ</span>' : ''}
+          </div>`;
+      })
+      .join('');
     this.elTop.innerHTML = `
-      <button class="btn-small" data-cmd="menu" title="設定" aria-label="設定メニュー">≡</button>
-      <span class="round">${roundLabel(v)} ${v.honba}本場</span>
-      <span class="chip">供託 ${v.riichiSticks}</span>
-      ${flags.map((f) => `<span class="flag">${f}</span>`).join('')}`;
+      <div class="top-line">
+        <button class="btn-small" data-cmd="menu" title="設定" aria-label="設定メニュー">≡</button>
+        <span class="round">${roundLabel(v)} ${v.honba}本場</span>
+        <span class="chip">供託 ${v.riichiSticks}</span>
+      </div>
+      ${flags.length ? `<div class="top-flags">${flags.map((f) => `<span class="flag">${f}</span>`).join('')}</div>` : ''}
+      <div class="players-panel">${rows}</div>`;
   }
 
   private applyHandSize() {
@@ -341,7 +366,7 @@ export class TableUI {
       const isTurn = (v.phase === 'turn' && v.current === seat) || (pend && pend.from === seat);
       const wind = WIND_NAMES[p.seatWind - 27];
       html += `
-        <div class="side rel-${r}">
+        <div class="side rel-${r} ${isTurn ? 'active' : ''}">
           <div class="river">${river}</div>
           ${edge}
           ${p.riichi ? '<div class="stick"></div>' : ''}
@@ -352,13 +377,13 @@ export class TableUI {
         </div>`;
     }
     const dora = [0, 1, 2, 3, 4]
-      .map((i) => (i < v.doraIndicators.length ? `<div class="tile">${tileSvg(v.doraIndicators[i], aka)}</div>` : '<div class="tile back"></div>'))
+      .map((i) => (i < v.doraIndicators.length ? `<div class="tile">${tileSvg(v.doraIndicators[i], aka)}</div>` : '<div class="tile back dora-back"></div>'))
       .join('');
     html += `
       <div class="center">
-        <div class="c-round">${roundLabel(v)}</div>
+        <div class="c-round">${roundLabel(v)}<span class="c-honba"> ${v.honba}本場</span></div>
         <div class="c-sub">${v.honba}本場　供託${v.riichiSticks}</div>
-        <div class="c-dora">${dora}</div>
+        <div class="c-dora"><span class="c-label">ドラ</span>${dora}</div>
         <div class="c-rest">残り ${v.liveRemaining}</div>
       </div>`;
     this.elBoard.innerHTML = html;
